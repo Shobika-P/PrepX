@@ -1,0 +1,118 @@
+"""
+Unit Tests for AI Campus Companion Core Business Logic & Services.
+"""
+
+import os
+import sys
+
+# Ensure backend root is in sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+import pytest
+from services.academic_service import audit_academic_performance, analyze_attendance, calculate_grade_point
+from services.skill_gap_service import analyze_skill_gap, normalize_skill
+from services.recommendation_service import generate_personalized_recommendations
+from models.student_model import validate_student_data
+
+def test_calculate_grade_point():
+    assert calculate_grade_point(95)[0] == 10.0
+    assert calculate_grade_point(85)[0] == 9.0
+    assert calculate_grade_point(75)[0] == 8.0
+    assert calculate_grade_point(65)[0] == 7.0
+    assert calculate_grade_point(55)[0] == 6.0
+    assert calculate_grade_point(45)[0] == 5.0
+    assert calculate_grade_point(35)[0] == 0.0
+
+def test_attendance_analysis():
+    good = analyze_attendance(90.0)
+    assert good["badge"] == "Normal"
+    assert good["classes_to_reach_75"] == 0
+
+    warning = analyze_attendance(78.0)
+    assert warning["badge"] == "Warning"
+
+    critical = analyze_attendance(65.0)
+    assert critical["badge"] == "Danger"
+    assert critical["classes_to_reach_75"] > 0
+
+def test_academic_audit_service():
+    sample_student = {
+        "id": "STU_TEST",
+        "name": "Test Student",
+        "roll_number": "21CS999",
+        "semester": 6,
+        "attendance_percentage": 82.0,
+        "subjects": [
+            {"code": "CS101", "name": "Subject A", "marks": 90, "credits": 4},
+            {"code": "CS102", "name": "Subject B", "marks": 50, "credits": 4},
+            {"code": "CS103", "name": "Subject C", "marks": 80, "credits": 3}
+        ]
+    }
+    
+    audit = audit_academic_performance(sample_student)
+    assert audit["total_subjects"] == 3
+    assert audit["total_credits"] == 11
+    # Average: (90 + 50 + 80) / 3 = 73.33
+    assert 73.0 <= audit["average_marks"] <= 74.0
+    assert len(audit["strong_subjects"]) == 2  # 90 and 80 are >= 75
+    assert len(audit["weak_subjects"]) == 1    # 50 is < 60
+    assert audit["performance_category"] == "Good"
+
+def test_skill_gap_service():
+    student_skills = ["HTML", "CSS", "JavaScript", "Python"]
+    career_role = {
+        "id": "full_stack_dev",
+        "title": "Full-Stack Developer",
+        "core_skills": ["HTML", "CSS", "JavaScript", "React", "Node.js", "Express.js", "MongoDB", "Git"],
+        "advanced_skills": ["TypeScript", "Docker"]
+    }
+
+    gap = analyze_skill_gap(student_skills, career_role)
+    assert gap["acquired_core_count"] == 3  # HTML, CSS, JavaScript
+    assert gap["missing_core_count"] == 5   # React, Node.js, Express.js, MongoDB, Git
+    assert gap["core_match_percentage"] == round((3 / 8) * 100, 1)  # 37.5%
+    assert gap["readiness_level"] == "Novice / Significant Skill Gap"
+
+def test_recommendation_engine():
+    sample_student = {
+        "id": "STU_TEST",
+        "name": "Test Student",
+        "roll_number": "21CS999",
+        "semester": 6,
+        "attendance_percentage": 70.0,
+        "subjects": [
+            {"code": "CS102", "name": "Database Management Systems (DBMS)", "marks": 52, "credits": 4}
+        ]
+    }
+    career_role = {
+        "id": "full_stack_dev",
+        "title": "Full-Stack Developer",
+        "core_skills": ["HTML", "React", "Node.js"],
+        "advanced_skills": []
+    }
+    
+    audit = audit_academic_performance(sample_student)
+    gap = analyze_skill_gap(["HTML"], career_role)
+    recs = generate_personalized_recommendations(sample_student, audit, gap)
+    
+    assert recs["total_recommendations"] > 0
+    categories = [r["category"] for r in recs["recommendations"]]
+    assert "Academic Remediation" in categories
+    assert "Attendance Compliance" in categories
+    assert "Career Skill Gap" in categories
+
+def test_student_validation():
+    valid = {
+        "name": "Jane Doe",
+        "roll_number": "22CS101",
+        "semester": "4",
+        "subjects": [{"name": "Math", "marks": "85", "credits": 4}],
+        "attendance_percentage": "88.5"
+    }
+    cleaned = validate_student_data(valid)
+    assert cleaned["name"] == "Jane Doe"
+    assert cleaned["semester"] == 4
+    assert cleaned["attendance_percentage"] == 88.5
+
+if __name__ == "__main__":
+    pytest.main(["-v", __file__])
