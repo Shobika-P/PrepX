@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStudent } from '../../context/StudentContext';
 import SubjectMarksChart from './SubjectMarksChart';
 import GradeDistributionCard from './GradeDistributionCard';
@@ -14,7 +14,16 @@ import {
 } from 'lucide-react';
 
 export default function AcademicAuditView() {
-  const { activeStudent, academicAudit, loading, setProfileModalOpen } = useStudent();
+  const { activeStudent, academicAudit, loading, setProfileModalOpen, refreshAcademicAudit } = useStudent();
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [refreshError, setRefreshError] = useState('');
+  const [refreshDone, setRefreshDone] = useState(false);
+
+  const analyze = async () => {
+    setRefreshError(''); setRefreshDone(false);
+    try { await refreshAcademicAudit(); setRefreshDone(true); }
+    catch (error) { setRefreshError(error.message || 'Could not refresh the academic audit.'); }
+  };
 
   if (loading && !academicAudit) {
     return (
@@ -45,7 +54,7 @@ export default function AcademicAuditView() {
 
   const getStatusBadge = (marks) => {
     if (marks >= 75) {
-      return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Strong Proficiency</span>;
+      return <span className="inline-flex whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Strong Proficiency</span>;
     }
     if (marks >= 60) {
       return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">Proficient</span>;
@@ -88,7 +97,9 @@ export default function AcademicAuditView() {
             <p className="text-sm font-extrabold">{academicAudit.performance_category}</p>
           </div>
         </div>
+        <div className="flex flex-wrap gap-2"><button type="button" onClick={() => setProfileModalOpen(true)} className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50">Edit records</button><button type="button" onClick={analyze} disabled={loading} className="rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{loading ? 'Analyzing…' : 'Analyze Performance'}</button></div>
       </div>
+      {(refreshError || refreshDone) && <p role={refreshError ? 'alert' : 'status'} className={`text-sm ${refreshError ? 'text-rose-700' : 'text-emerald-700'}`}>{refreshError || 'Academic audit refreshed from your saved records.'}</p>}
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -125,7 +136,8 @@ export default function AcademicAuditView() {
             <h3 className="font-bold text-base text-slate-900">Subject Marks vs Benchmark</h3>
             <p className="text-xs text-slate-500">Green: Strong (≥75%), Purple: Proficient (60-74%), Red: Attention Needed (&lt;60%)</p>
           </div>
-          <SubjectMarksChart subjects={academicAudit.subjects_breakdown} />
+          <p className="text-xs text-slate-500">Select a bar to inspect that subject’s detailed result.</p>
+          <SubjectMarksChart subjects={academicAudit.subjects_breakdown} onSubjectClick={setSelectedSubject} />
         </div>
 
         <div className="space-y-6">
@@ -168,12 +180,12 @@ export default function AcademicAuditView() {
                 <th className="px-6 py-3.5 text-center">Marks (%)</th>
                 <th className="px-6 py-3.5 text-center">Letter Grade</th>
                 <th className="px-6 py-3.5 text-center">Grade Point</th>
-                <th className="px-6 py-3.5 text-right">Audit Evaluation</th>
+                <th className="px-6 py-3.5 text-center whitespace-nowrap">Audit Evaluation</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200/80">
               {academicAudit.subjects_breakdown.map((subj, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                <tr key={idx} tabIndex={0} role="button" onClick={() => setSelectedSubject(subj)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelectedSubject(subj); } }} aria-label={`View details for ${subj.name}`} className="cursor-pointer hover:bg-slate-50/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600 transition-colors">
                   <td className="px-6 py-4 font-mono font-bold text-slate-700 text-xs">{subj.code}</td>
                   <td className="px-6 py-4 font-semibold text-slate-900">{subj.name}</td>
                   <td className="px-6 py-4 text-center font-medium text-slate-700">{subj.credits}</td>
@@ -186,7 +198,7 @@ export default function AcademicAuditView() {
                   </td>
                   <td className="px-6 py-4 text-center font-bold text-slate-800">{subj.letter_grade}</td>
                   <td className="px-6 py-4 text-center font-semibold text-slate-700">{subj.grade_point}</td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-center whitespace-nowrap">
                     {getStatusBadge(subj.marks)}
                   </td>
                 </tr>
@@ -196,6 +208,16 @@ export default function AcademicAuditView() {
         </div>
       </div>
 
+      {selectedSubject && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4" onClick={() => setSelectedSubject(null)}>
+        <section role="dialog" aria-modal="true" aria-labelledby="subject-detail-title" onClick={event => event.stopPropagation()} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+          <div className="flex items-start justify-between gap-4"><div><p className="eyebrow">SUBJECT DETAIL</p><h2 id="subject-detail-title" className="text-xl font-bold text-slate-900">{selectedSubject.name}</h2></div><button type="button" onClick={() => setSelectedSubject(null)} className="rounded-lg border px-3 py-1.5 text-sm">Close</button></div>
+          <dl className="mt-5 grid grid-cols-2 gap-3 text-sm"><Detail label="Subject code" value={selectedSubject.code}/><Detail label="Credits" value={selectedSubject.credits}/><Detail label="Marks" value={`${selectedSubject.marks}%`}/><Detail label="Letter grade" value={selectedSubject.letter_grade}/><Detail label="Grade point" value={selectedSubject.grade_point}/><Detail label="Result" value={selectedSubject.marks >= 75 ? 'Strong' : selectedSubject.marks >= 60 ? 'Proficient' : 'Needs focus'}/></dl>
+          <p className="mt-4 text-sm text-slate-600">{selectedSubject.marks < 60 ? 'This subject is below the PrepX 60% attention threshold. Review the related syllabus topics and practice with course materials.' : selectedSubject.marks < 75 ? 'This result meets the PrepX 60% proficiency threshold. Continued practice can strengthen retention.' : 'This result is above the PrepX 75% strong performance threshold.'}</p>
+        </section>
+      </div>}
+
     </div>
   );
 }
+
+function Detail({label, value}) { return <div className="rounded-lg bg-slate-50 p-3"><dt className="text-xs text-slate-500">{label}</dt><dd className="mt-1 font-semibold text-slate-900">{value}</dd></div>; }

@@ -196,3 +196,46 @@ def analyze_skill_gap(student_skills: List[str], career_role: Dict[str, Any]) ->
         "learning_resources": career_role.get("learning_resources", []),
         "project_ideas": career_role.get("project_ideas", [])
     }
+
+
+def incorporate_assessment_results(analysis_result: Dict[str, Any], attempts: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Apply latest role-specific stored assessment per skill to readiness counts."""
+    latest = {}
+    for attempt in attempts:
+        latest.setdefault(str(attempt.get("skill_name", "")).lower(), attempt)
+    assessment_summary = []
+    competencies = (analysis_result["acquired_core_skills"] + analysis_result["missing_core_skills"] +
+                    analysis_result["acquired_advanced_skills"] + analysis_result["missing_advanced_skills"])
+    for item in competencies:
+        assessed = latest.get(item["name"].lower())
+        if assessed:
+            item["assessment"] = {"score_percentage": assessed["score_percentage"], "proficiency": assessed["proficiency"],
+                                  "required_level": assessed.get("required_level"), "needs_improvement": assessed.get("needs_improvement")}
+            item["status"] = "Missing" if assessed.get("needs_improvement") else "Acquired"
+            assessment_summary.append({"skill": item["name"], **item["assessment"]})
+    for core in (True, False):
+        tier_items = [item for item in competencies if item["is_core"] == core]
+        acquired = [item for item in tier_items if item["status"] == "Acquired"]
+        missing = [item for item in tier_items if item["status"] != "Acquired"]
+        analysis_result["acquired_core_skills" if core else "acquired_advanced_skills"] = acquired
+        analysis_result["missing_core_skills" if core else "missing_advanced_skills"] = missing
+        analysis_result["acquired_core_count" if core else "acquired_advanced_count"] = len(acquired)
+        analysis_result["missing_core_count" if core else "missing_advanced_count"] = len(missing)
+        total = analysis_result["total_core_skills" if core else "total_advanced_skills"]
+        analysis_result["core_match_percentage" if core else "advanced_match_percentage"] = round(len(acquired) / total * 100, 1) if total else 0.0
+    analysis_result["overall_readiness_score"] = round(0.75 * analysis_result["core_match_percentage"] + 0.25 * analysis_result["advanced_match_percentage"], 1)
+    score = analysis_result["overall_readiness_score"]
+    if score >= 85:
+        analysis_result.update(readiness_level="Job Ready / Advanced", readiness_badge="Excellent", readiness_color="emerald")
+    elif score >= 65:
+        analysis_result.update(readiness_level="Internship Ready / Moderate Gap", readiness_badge="Good", readiness_color="blue")
+    elif score >= 40:
+        analysis_result.update(readiness_level="Foundation Built / Substantial Gap", readiness_badge="Intermediate", readiness_color="amber")
+    else:
+        analysis_result.update(readiness_level="Novice / Significant Skill Gap", readiness_badge="Beginner", readiness_color="rose")
+    for category in analysis_result["categories_breakdown"].values():
+        category["acquired"] = sum(skill["status"] == "Acquired" for skill in category["skills"])
+        category["missing"] = category["total"] - category["acquired"]
+    analysis_result["assessed_skills"] = assessment_summary
+    analysis_result["assessment_mapping"] = "PrepX bands: 0–39 Beginner, 40–59 Developing, 60–79 Proficient, 80–100 Advanced. Existing core competencies require Proficient; advanced competencies require Advanced."
+    return analysis_result

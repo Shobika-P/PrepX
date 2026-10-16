@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStudent } from '../../context/StudentContext';
 import { 
   Printer, 
@@ -21,6 +21,7 @@ export default function StudentReportView() {
     reportData,
     loading 
   } = useStudent();
+  const [reportType, setReportType] = useState('full');
 
   if (loading && !academicAudit) {
     return (
@@ -47,17 +48,17 @@ export default function StudentReportView() {
     <div className="space-y-6 pb-16 max-w-5xl mx-auto">
       
       {/* Top Action Bar (hidden during print) */}
-      <div className="no-print flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="no-print flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
         <div>
-          <h2 className="font-bold text-base text-slate-900">Official Student Audit & Skill Dossier</h2>
-          <p className="text-xs text-slate-500">Consolidated transcript ready for institutional review and portfolio export</p>
+          <h2 className="font-bold text-base text-slate-900">Student Progress Report</h2>
+          <p className="text-xs text-slate-500">Choose a report preview, then print or save it as PDF.</p>
         </div>
-        <button
+        <div className="flex flex-wrap items-center gap-2"><label className="text-xs font-semibold text-slate-600">Report type <select value={reportType} onChange={event => setReportType(event.target.value)} className="ml-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"><option value="full">Full report</option><option value="academic">Academic audit</option><option value="career">Career skills & recommendations</option></select></label><button
           onClick={handlePrint}
           className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-indigo-600/30 flex items-center gap-2 transition-all"
         >
           <Printer className="w-4 h-4" /> Print / Save as PDF
-        </button>
+        </button></div>
       </div>
 
       {/* Printable Official Document Container */}
@@ -82,7 +83,7 @@ export default function StudentReportView() {
           <div className="text-right text-xs text-slate-500 space-y-0.5 sm:border-l sm:pl-4 border-slate-200">
             <p><strong>Report Date:</strong> {currentDate}</p>
             <p><strong>Document ID:</strong> AUD-{activeStudent?.roll_number || '2026'}-SEC</p>
-            <p><strong>Status:</strong> Verified Institutional Copy</p>
+            <p><strong>Status:</strong> Student-generated report</p>
           </div>
         </div>
 
@@ -108,23 +109,23 @@ export default function StudentReportView() {
 
         {/* High Level Key Performance Indicator Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="p-4 rounded-xl border border-slate-200 text-center bg-white shadow-sm">
+          <div hidden={reportType === 'career'} className="p-4 rounded-xl border border-slate-200 text-center bg-white shadow-sm">
             <span className="text-[11px] font-bold uppercase text-slate-400">Average Score</span>
-            <p className="text-2xl font-black text-slate-900 mt-1">{academicAudit?.average_marks}%</p>
+            <p className="text-2xl font-black text-slate-900 mt-1">{academicAudit?.average_marks == null ? 'Not available' : `${academicAudit.average_marks}%`}</p>
             <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full mt-1 inline-block">
               {academicAudit?.performance_category}
             </span>
           </div>
 
-          <div className="p-4 rounded-xl border border-slate-200 text-center bg-white shadow-sm">
+          <div hidden={reportType === 'career'} className="p-4 rounded-xl border border-slate-200 text-center bg-white shadow-sm">
             <span className="text-[11px] font-bold uppercase text-slate-400">Weighted GPA</span>
-            <p className="text-2xl font-black text-indigo-600 mt-1">{academicAudit?.weighted_gpa}</p>
+            <p className="text-2xl font-black text-indigo-600 mt-1">{academicAudit?.weighted_gpa == null ? 'Not available' : academicAudit.weighted_gpa}</p>
             <span className="text-[10px] text-slate-500 block mt-1">10.0 Scale</span>
           </div>
 
-          <div className="p-4 rounded-xl border border-slate-200 text-center bg-white shadow-sm">
+          <div hidden={reportType === 'career'} className="p-4 rounded-xl border border-slate-200 text-center bg-white shadow-sm">
             <span className="text-[11px] font-bold uppercase text-slate-400">Attendance</span>
-            <p className="text-2xl font-black text-slate-900 mt-1">{academicAudit?.attendance_analysis?.percentage}%</p>
+            <p className="text-2xl font-black text-slate-900 mt-1">{academicAudit?.attendance_analysis?.percentage == null ? 'Not available' : `${academicAudit.attendance_analysis.percentage}%`}</p>
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 inline-block ${
               (academicAudit?.attendance_analysis?.percentage || 0) < 75 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'
             }`}>
@@ -132,15 +133,15 @@ export default function StudentReportView() {
             </span>
           </div>
 
-          <div className="p-4 rounded-xl border border-slate-200 text-center bg-white shadow-sm">
+          <div hidden={reportType === 'academic'} className="p-4 rounded-xl border border-slate-200 text-center bg-white shadow-sm">
             <span className="text-[11px] font-bold uppercase text-slate-400">Career Readiness</span>
-            <p className="text-2xl font-black text-emerald-600 mt-1">{skillGap?.overall_readiness_score}%</p>
+            <p className="text-2xl font-black text-emerald-600 mt-1">{skillGap?.overall_readiness_score == null ? 'Not available' : `${skillGap.overall_readiness_score}%`}</p>
             <span className="text-[10px] text-slate-500 block mt-1">{skillGap?.readiness_badge}</span>
           </div>
         </div>
 
         {/* 1. Academic Performance Scorecard */}
-        <div className="space-y-3">
+        <div hidden={reportType === 'career'} className="space-y-3">
           <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
             <Award className="w-5 h-5 text-indigo-600" />
             <h3 className="font-bold text-base text-slate-900 uppercase tracking-wide">
@@ -161,6 +162,7 @@ export default function StudentReportView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
+              {!(academicAudit?.subjects_breakdown || []).length && <tr><td colSpan="7" className="p-5 text-center text-slate-500">No academic subject records have been saved.</td></tr>}
               {(academicAudit?.subjects_breakdown || []).map((s, idx) => (
                 <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
                   <td className="p-3 font-mono font-bold text-slate-800">{s.code}</td>
@@ -183,7 +185,7 @@ export default function StudentReportView() {
         </div>
 
         {/* 2. Skill-Gap & Industry Readiness Matrix */}
-        <div className="space-y-3">
+        <div hidden={reportType === 'academic'} className="space-y-3">
           <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
             <Compass className="w-5 h-5 text-indigo-600" />
             <h3 className="font-bold text-base text-slate-900 uppercase tracking-wide">
@@ -221,7 +223,7 @@ export default function StudentReportView() {
         </div>
 
         {/* 3. Actionable Remediation & Growth Plan */}
-        <div className="space-y-3">
+        <div hidden={reportType === 'academic'} className="space-y-3">
           <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
             <Sparkles className="w-5 h-5 text-indigo-600" />
             <h3 className="font-bold text-base text-slate-900 uppercase tracking-wide">
@@ -246,22 +248,6 @@ export default function StudentReportView() {
                 )}
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* Institutional Sign-off Block */}
-        <div className="pt-8 border-t-2 border-slate-200 grid grid-cols-2 gap-8 text-center text-xs text-slate-500">
-          <div className="space-y-12">
-            <p className="font-semibold text-slate-700">Academic Faculty Advisor</p>
-            <div className="border-t border-dashed border-slate-400 w-48 mx-auto">
-              <p className="text-[10px] pt-1">Signature & Department Stamp</p>
-            </div>
-          </div>
-          <div className="space-y-12">
-            <p className="font-semibold text-slate-700">Campus Career Placement Cell</p>
-            <div className="border-t border-dashed border-slate-400 w-48 mx-auto">
-              <p className="text-[10px] pt-1">Verification Seal</p>
-            </div>
           </div>
         </div>
 

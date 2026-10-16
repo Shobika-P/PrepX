@@ -48,7 +48,7 @@ export default function SkillGapView() {
           </span>
         </div>
         <p className="text-sm text-slate-500 mt-1">
-          Compare student skills against industry job descriptions, detect technical deficits, and generate tailored roadmaps.
+          Compare saved profile skills and assessment results with the configured competencies for your selected career role.
         </p>
       </div>
 

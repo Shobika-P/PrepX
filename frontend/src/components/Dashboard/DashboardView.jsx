@@ -15,14 +15,15 @@ import {
 } from 'lucide-react';
 
 export default function DashboardView() {
-  const { 
+  const {
     activeStudent, 
     academicAudit, 
     skillGap, 
     recommendations, 
     activeRole, 
     setActiveTab,
-    loading 
+    loading,
+    setProfileModalOpen
   } = useStudent();
 
   if (loading && !academicAudit) {
@@ -93,6 +94,8 @@ export default function DashboardView() {
             >
               <Compass className="w-4 h-4" /> Skill Gap Matrix
             </button>
+            <button onClick={() => setActiveTab('assessment')} className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-xs sm:text-sm transition-all flex items-center gap-1.5"><ListChecks className="w-4 h-4" /> Skill Assessment</button>
+            <button onClick={() => setActiveTab('report')} className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-xs sm:text-sm transition-all flex items-center gap-1.5"><GraduationCap className="w-4 h-4" /> Reports</button>
           </div>
         </div>
       </div>
@@ -108,6 +111,7 @@ export default function DashboardView() {
           }
           icon={GraduationCap}
           subtitle={gpa == null ? 'Add subject marks to calculate GPA' : `Weighted GPA: ${gpa} / 10.0`}
+          onClick={() => setActiveTab('academic')}
         />
 
         <StatCard
@@ -117,6 +121,7 @@ export default function DashboardView() {
           color={readiness == null ? 'blue' : readiness >= 75 ? 'emerald' : readiness >= 50 ? 'indigo' : 'amber'}
           icon={Compass}
           subtitle={`For ${targetRoleTitle}`}
+          onClick={() => setActiveTab('skillgap')}
         />
 
         <StatCard
@@ -127,6 +132,7 @@ export default function DashboardView() {
           icon={UserRoundCheck}
           subtitle="Add profile data for more useful analysis"
           progress={profileCompletion}
+          onClick={() => setProfileModalOpen(true)}
         />
 
         <StatCard
@@ -137,6 +143,7 @@ export default function DashboardView() {
           icon={ListChecks}
           subtitle={roadmap.length ? 'Roadmap tasks saved to your profile' : 'A plan appears when career data loads'}
           progress={learningProgress}
+          onClick={() => setActiveTab('recommendations')}
         />
       </div>
 

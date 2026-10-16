@@ -275,6 +275,8 @@ html.dark .onboarding-note { background: #223342; color: #d5e0e8; }
 html.dark .review-summary dd { color: #e0e8ee; }
 .app-header { position: sticky; top: 0; z-index: 40; background: #18334d; color: #edf3f7; border-bottom-color: #29465e; }
 .brand-lockup { color: #edf3f7; }
+.account-chip { color: #edf3f7; }
+.account-chip strong { color: #ffffff; }
 .brand-lockup small, .account-chip small, .system-pill { color: #b8c7d3; }
 .brand-mark.small, .avatar { background: #294760; color: #f2f5f7; }
 .role-picker { background: #203d56; border-color: #3d5a72; color: #c8d4dd; }

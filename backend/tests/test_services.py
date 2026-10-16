@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 import pytest
 from services.academic_service import audit_academic_performance, analyze_attendance, calculate_grade_point
-from services.skill_gap_service import analyze_skill_gap, normalize_skill
+from services.skill_gap_service import analyze_skill_gap, normalize_skill, incorporate_assessment_results
 from services.recommendation_service import generate_personalized_recommendations
 from models.student_model import validate_student_data
 from services.assessment_service import QUESTION_BANK, proficiency, public_questions, score_submission
@@ -74,6 +74,19 @@ def test_skill_gap_service():
     assert gap["core_match_percentage"] == round((3 / 8) * 100, 1)  # 37.5%
     assert gap["readiness_level"] == "Novice / Significant Skill Gap"
 
+def test_assessment_changes_role_readiness_but_unassessed_stays_missing():
+    role = {"id":"frontend_dev", "title":"Frontend", "core_skills":["React"], "advanced_skills":[]}
+    baseline = analyze_skill_gap([], role)
+    assert baseline["overall_readiness_score"] == 0
+    passed = incorporate_assessment_results(baseline, [{
+        "skill_name":"React", "score_percentage":80, "proficiency":"Advanced",
+        "required_level":"Proficient", "needs_improvement":False
+    }])
+    assert passed["core_match_percentage"] == 100
+    assert passed["overall_readiness_score"] == 75
+    assert passed["acquired_core_skills"][0]["assessment"]["score_percentage"] == 80
+    assert passed["assessed_skills"][0]["skill"] == "React"
+
 def test_recommendation_engine():
     sample_student = {
         "id": "STU_TEST",
@@ -114,6 +127,13 @@ def test_student_validation():
     assert cleaned["name"] == "Jane Doe"
     assert cleaned["semester"] == 4
     assert cleaned["attendance_percentage"] == 88.5
+    with pytest.raises(ValueError, match="Duplicate subject code or name"):
+        validate_student_data({"subjects":[
+            {"code":"CS101","name":"Math","marks":80,"credits":4},
+            {"code":"cs101","name":"Statistics","marks":75,"credits":3}
+        ]}, is_update=True)
+    with pytest.raises(ValueError, match="Marks are required"):
+        validate_student_data({"subjects":[{"code":"CS1","name":"Math","marks":"","credits":4}]}, is_update=True)
 
 def test_assessment_questions_hide_answer_keys_and_scoring():
     questions = public_questions("javascript", 1)

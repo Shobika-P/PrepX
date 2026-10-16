@@ -4,9 +4,9 @@ Combines academic audit and skill gap findings into actionable remediation and c
 """
 
 from flask import Blueprint, request, jsonify
-from database.db import get_students_collection, get_careers_collection
+from database.db import get_students_collection, get_careers_collection, get_assessment_attempts_collection
 from services.academic_service import audit_academic_performance
-from services.skill_gap_service import analyze_skill_gap
+from services.skill_gap_service import analyze_skill_gap, incorporate_assessment_results
 from services.recommendation_service import generate_personalized_recommendations, generate_ai_enhanced_insights
 from models.student_model import serialize_student
 from models.career_model import serialize_career_role
@@ -41,6 +41,10 @@ def get_recommendations(student_id):
         # Run Audits
         academic_audit = audit_academic_performance(student_dict)
         skill_gap = analyze_skill_gap(student_dict.get("technical_skills", []), career_dict)
+        attempts = list(get_assessment_attempts_collection().find(
+            {"student_id": student_dict.get("id"), "career_role_id": role_id}
+        ).sort("created_at", -1))
+        skill_gap = incorporate_assessment_results(skill_gap, attempts)
 
         recommendations_data = generate_personalized_recommendations(
             student_dict, academic_audit, skill_gap

@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function StatCard({ title, value, subtitle, icon: Icon, color = 'indigo', badge, trend, progress }) {
+export default function StatCard({ title, value, subtitle, icon: Icon, color = 'indigo', badge, trend, progress, onClick }) {
   const colorMap = {
     indigo: {
       bg: 'bg-indigo-50/70',
@@ -48,8 +48,7 @@ export default function StatCard({ title, value, subtitle, icon: Icon, color = '
 
   const scheme = colorMap[color] || colorMap.indigo;
 
-  return (
-    <div className={`section-card p-5 rounded-2xl bg-white border ${scheme.border} shadow-sm transition-all duration-200`}>
+  const content = <>
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{title}</span>
         {Icon && (
@@ -79,6 +78,11 @@ export default function StatCard({ title, value, subtitle, icon: Icon, color = '
           <div className="h-full rounded-full bg-current transition-[width] duration-500" style={{ width: `${progress}%`, color: 'var(--progress-color, #356AE6)' }} />
         </div>
       )}
-    </div>
-  );
+    </>;
+
+  return onClick ? (
+    <button type="button" onClick={onClick} className={`section-card w-full p-5 rounded-2xl bg-white border ${scheme.border} shadow-sm text-left transition-all duration-200 hover:border-slate-300 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600`} aria-label={`${title}: ${value}. Open details`}>
+      {content}
+    </button>
+  ) : <div className={`section-card p-5 rounded-2xl bg-white border ${scheme.border} shadow-sm`}>{content}</div>;
 }

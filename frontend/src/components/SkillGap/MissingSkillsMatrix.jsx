@@ -3,7 +3,7 @@ import { CheckCircle2, XCircle, Layers, PlusCircle, ChevronDown } from 'lucide-r
 import { useStudent } from '../../context/StudentContext';
 
 export default function MissingSkillsMatrix({ skillGap }) {
-  const { addSkillToProfile } = useStudent();
+  const { addSkillToProfile, setActiveTab } = useStudent();
   const [addingSkill, setAddingSkill] = useState(null);
 
   if (!skillGap) return null;
@@ -37,19 +37,23 @@ export default function MissingSkillsMatrix({ skillGap }) {
         </div>
         <div className="space-y-2">
           {requirements.map((skill) => {
-            const current = skill.status === 'Acquired' ? 100 : 0;
+            const profileListed = (skillGap.all_student_skills || []).some(value => value.toLowerCase() === skill.name.toLowerCase());
+            const assessed = skill.assessment;
+            const meets = assessed ? !assessed.needs_improvement : profileListed;
+            const current = meets ? 100 : 0;
             return <details key={`${skill.name}-${skill.is_core}`} className="skill-requirement">
               <summary className="flex cursor-pointer list-none items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
                 <span className={`min-w-0 flex-1 text-sm font-semibold ${current ? 'text-slate-800' : 'text-slate-600'}`}>{skill.name}</span>
-                <span className="hidden w-28 text-right text-[11px] text-slate-500 sm:block">{current ? 'In profile' : 'Not listed'}</span>
+                <span className="hidden w-32 text-right text-[11px] text-slate-500 sm:block">{assessed ? `${assessed.proficiency} · ${assessed.score_percentage}%` : profileListed ? 'Profile listed · not assessed' : 'Not assessed'}</span>
                 <span className="h-2 w-20 overflow-hidden rounded-full bg-slate-100 sm:w-28" aria-hidden="true"><span className={`block h-full rounded-full ${current ? 'bg-teal-600' : 'bg-amber-500'}`} style={{ width: `${current}%` }} /></span>
                 <span className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-bold uppercase text-blue-800">{skill.is_core ? 'Core' : 'Advanced'}</span>
                 <ChevronDown className="h-4 w-4 text-slate-400 transition-transform" />
               </summary>
               <div className="grid gap-3 border-x border-b border-slate-200 px-4 py-3 text-xs sm:grid-cols-2">
-                <div><span className="font-semibold text-slate-500">Your profile</span><p className="mt-1 font-medium text-slate-800">{current ? 'Listed as an acquired skill' : 'Not listed yet'}</p></div>
-                <div><span className="font-semibold text-slate-500">Role expectation</span><p className="mt-1 font-medium text-slate-800">Required · {skill.is_core ? 'Core competency' : 'Advanced competency'}</p></div>
-                <p className="sm:col-span-2 text-slate-600">{current ? 'Next step: build a project that demonstrates this skill.' : `Gap: ${skill.name} is required for this role. Learn it, practice it, then add it to your profile.`}</p>
+                <div><span className="font-semibold text-slate-500">Recorded proficiency</span><p className="mt-1 font-medium text-slate-800">{assessed ? `${assessed.proficiency} (${assessed.score_percentage}%, assessed)` : profileListed ? 'Listed in profile; no assessment score yet' : 'Unassessed'}</p></div>
+                <div><span className="font-semibold text-slate-500">Role target</span><p className="mt-1 font-medium text-slate-800">{assessed?.required_level || (skill.is_core ? 'Proficient (core)' : 'Advanced (advanced)')}</p></div>
+                <p className="sm:col-span-2 text-slate-600">{assessed?.needs_improvement ? `This is a configured requirement for the selected role; your ${assessed.proficiency} result is below the target. Next action: practice ${skill.name} fundamentals, then retake its assessment.` : meets ? 'This competency is currently counted toward role readiness. Next action: apply it in a role-relevant project.' : `${skill.name} is a configured role requirement. Next action: take its assessment to establish a proficiency score, then use the recommended learning resources.`}</p>
+                <div className="sm:col-span-2"><button type="button" onClick={() => setActiveTab('assessment')} className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-800 hover:bg-indigo-100">Open Skill Assessment</button></div>
               </div>
             </details>;
           })}
@@ -102,7 +106,7 @@ export default function MissingSkillsMatrix({ skillGap }) {
                     {skill.is_core && (
                       <span className="text-[9px] font-bold uppercase opacity-60 ml-0.5">• Core</span>
                     )}
-                    {skill.status !== 'Acquired' && (
+                    {skill.status !== 'Acquired' && !skill.assessment && (
                       <button
                         onClick={() => handleAddSkillClick(skill.name)}
                         disabled={addingSkill === skill.name}
@@ -130,7 +134,7 @@ export default function MissingSkillsMatrix({ skillGap }) {
               <XCircle className="w-5 h-5 text-rose-600" />
               <div>
                 <h4 className="font-bold text-sm text-rose-950">Missing Core Skills (Action Required)</h4>
-                <p className="text-xs text-rose-700/80">Click "+ Add to Profile" once learned to update persistent memory</p>
+                <p className="text-xs text-rose-700/80">Take an assessment or add a learned skill to your profile</p>
               </div>
             </div>
             <span className="text-xs font-bold bg-rose-200 text-rose-900 px-2.5 py-0.5 rounded-full">
@@ -149,14 +153,11 @@ export default function MissingSkillsMatrix({ skillGap }) {
                       {skill.category}
                     </span>
                   </div>
-                  <button
+                  {skill.assessment ? <button type="button" onClick={() => setActiveTab('assessment')} className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold rounded-lg border border-amber-200">Retake assessment</button> : <button
                     onClick={() => handleAddSkillClick(skill.name)}
                     disabled={addingSkill === skill.name}
                     className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg border border-indigo-200 transition-colors flex items-center gap-1"
-                  >
-                    <PlusCircle className="w-3 h-3 text-indigo-600" />
-                    <span>{addingSkill === skill.name ? 'Adding...' : 'Add to Profile'}</span>
-                  </button>
+                  ><PlusCircle className="w-3 h-3 text-indigo-600" /><span>{addingSkill === skill.name ? 'Adding...' : 'Add to Profile'}</span></button>}
                 </div>
               ))
             ) : (

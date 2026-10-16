@@ -11,7 +11,7 @@ import {
   Cell,
 } from 'recharts';
 
-export default function SubjectMarksChart({ subjects = [] }) {
+export default function SubjectMarksChart({ subjects = [], onSubjectClick }) {
   const chartData = subjects.map((s) => ({
     code: s.code || s.name.substring(0, 8),
     name: s.name,
@@ -75,7 +75,7 @@ export default function SubjectMarksChart({ subjects = [] }) {
           <ReferenceLine y={60} stroke="#f43f5e" strokeDasharray="4 4" label={{ value: 'Minimum Target (60%)', fill: '#f43f5e', fontSize: 10, position: 'insideBottomRight' }} />
           
           <Bar dataKey="marks" radius={[6, 6, 0, 0]}>
-            {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={getBarColor(entry.marks)} />)}
+            {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={getBarColor(entry.marks)} cursor="pointer" onClick={() => onSubjectClick?.(subjects[index])} />)}
           </Bar>
         </BarChart>
       </ResponsiveContainer>

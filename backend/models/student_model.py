@@ -94,16 +94,22 @@ def validate_student_data(data: Dict[str, Any], is_update: bool = False) -> Dict
     if "subjects" in data:
         raw_subjects = data["subjects"]
         if not isinstance(raw_subjects, list):
-            cleaned["subjects"] = []
+            raise ValueError("Subjects must be provided as a list of records.")
         else:
             valid_subjects = []
+            seen_codes = set()
+            seen_names = set()
             for s in raw_subjects:
                 if not isinstance(s, dict):
-                    continue
+                    raise ValueError("Each subject must be a valid record.")
                 name = str(s.get("name", "")).strip()
                 if not name:
-                    continue
+                    raise ValueError("Every subject must have a name.")
+                if s.get("marks") in (None, ""):
+                    raise ValueError(f"Marks are required for '{name}'.")
                 try:
+                    if isinstance(s.get("marks"), bool):
+                        raise ValueError
                     marks = float(s.get("marks", 0))
                     if marks < 0 or marks > 100:
                         raise ValueError(f"Marks for '{name}' must be between 0 and 100.")
@@ -117,6 +123,11 @@ def validate_student_data(data: Dict[str, Any], is_update: bool = False) -> Dict
                 if credits_val < 1 or credits_val > 30:
                     raise ValueError(f"Credits for '{name}' must be a whole number from 1 to 30.")
                 code = str(s.get("code", "")).strip() or name[:4].upper()
+                norm_code, norm_name = code.casefold(), name.casefold()
+                if norm_code in seen_codes or norm_name in seen_names:
+                    raise ValueError(f"Duplicate subject code or name found for '{name}'.")
+                seen_codes.add(norm_code)
+                seen_names.add(norm_name)
 
                 valid_subjects.append({
                     "code": code,

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StudentProvider, useStudent } from './context/StudentContext';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -14,7 +14,13 @@ import SkillAssessmentView from './components/Assessment/SkillAssessmentView';
 import { BookOpen, Bookmark, PencilLine, Ruler } from 'lucide-react';
 
 function AppContent() {
-  const { activeTab, error, isSignedIn } = useStudent();
+  const { activeTab, error, setError, notice, setNotice, isSignedIn } = useStudent();
+
+  useEffect(() => {
+    if (!notice) return undefined;
+    const timeout = window.setTimeout(() => setNotice(null), 5000);
+    return () => window.clearTimeout(timeout);
+  }, [notice, setNotice]);
 
   if (!isSignedIn) return <AuthModal />;
 
@@ -57,9 +63,11 @@ function AppContent() {
         <main className="app-main flex-1 p-4 sm:p-6 lg:p-8 min-w-0">
           {error && (
             <div className="no-print mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-center justify-between shadow-sm">
-              <span>{error}</span>
+              <span role="alert">{error}</span>
+              <button type="button" onClick={() => setError(null)} aria-label="Dismiss error" className="ml-3 font-bold">×</button>
             </div>
           )}
+          {notice && <div role="status" className="no-print mb-6 flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 shadow-sm"><span>{notice}</span><button type="button" onClick={() => setNotice(null)} aria-label="Dismiss notification" className="ml-3 font-bold">×</button></div>}
           <div key={activeTab} className="section-enter">
             {renderActiveTab()}
           </div>

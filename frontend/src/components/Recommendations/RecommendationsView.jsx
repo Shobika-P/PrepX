@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 export default function RecommendationsView() {
-  const { recommendations, activeStudent, loading } = useStudent();
+  const { recommendations, activeStudent, activeRole, loading } = useStudent();
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   if (loading && !recommendations) {
@@ -120,6 +120,7 @@ export default function RecommendationsView() {
 
       {/* Detailed Recommendations List */}
       <div key={selectedCategory} className="recommendation-results space-y-4">
+        {filteredRecs.length === 0 && <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">There are no prioritized actions from your saved academic results, attendance, or role gaps right now. Add or update profile data and assessments to refresh these recommendations.</div>}
         {filteredRecs.map((rec) => {
           const style = getPriorityStyle(rec.priority);
 
@@ -179,11 +180,10 @@ export default function RecommendationsView() {
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <BookOpen className="w-4 h-4 text-indigo-500 shrink-0" />
                     <span className="font-semibold text-slate-700">Resources:</span>
-                    {rec.recommended_resources.map((res, rIdx) => (
-                      <span key={rIdx} className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[11px]">
-                        {res}
-                      </span>
-                    ))}
+                    {rec.recommended_resources.map((res, rIdx) => {
+                      const match = (activeRole?.learning_resources || []).find(resource => resource.title.toLowerCase() === String(res).toLowerCase() || resource.title.toLowerCase().includes(String(res).toLowerCase()));
+                      return match ? <a key={rIdx} href={match.url} target="_blank" rel="noreferrer" className="bg-slate-100 text-indigo-700 underline decoration-indigo-300 underline-offset-2 px-2 py-0.5 rounded text-[11px] hover:text-indigo-900">{res}</a> : <span key={rIdx} className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[11px]">{res}</span>;
+                    })}
                   </div>
                 )}
 

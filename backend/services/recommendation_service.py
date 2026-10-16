@@ -195,9 +195,19 @@ def generate_personalized_recommendations(
         })
 
     # Actionable 30-Day Plan Checklist
+    if weak_subjects:
+        first_focus = f"Review notes and solve practice questions for {weak_subjects[0]['name']}."
+    elif moderate_subjects:
+        first_focus = f"Review the topics and practice problems from {moderate_subjects[0]['name']}."
+    elif audit.get("total_subjects", 0) == 0:
+        first_focus = "Add saved subject marks to receive an academic remediation plan."
+    else:
+        first_focus = "Review one recent subject and keep your course notes current."
+    second_focus = (f"Start a learning path for assessed skill gap: {missing_core[0]['name']}." if missing_core
+                    else "Choose one advanced role skill and practice it in a small project.")
     thirty_day_plan = [
-        {"day": "Day 1-7", "focus": "Remediation & Review", "task": f"Review notes and solve practice questions for {weak_subjects[0]['name'] if weak_subjects else 'moderate subjects'}."},
-        {"day": "Day 8-14", "focus": "Skill Acquisition", "task": f"Begin self-paced course for missing core skill: {missing_core[0]['name'] if missing_core else 'advanced specialization'}."},
+        {"day": "Day 1-7", "focus": "Academic review", "task": first_focus},
+        {"day": "Day 8-14", "focus": "Career skill development", "task": second_focus},
         {"day": "Day 15-21", "focus": "Practical Exercise", "task": "Build a modular application component implementing newly learned technical concepts."},
         {"day": "Day 22-30", "focus": "Assessment & Portfolio", "task": "Test subject knowledge with mock papers and publish project code to GitHub."}
     ]

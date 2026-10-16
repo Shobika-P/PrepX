@@ -115,11 +115,20 @@ def skill_progress(attempts, skill_id):
 
 def public_skills(role, attempts=None):
     attempts = attempts or []
+    descriptions = {
+        "javascript": "Check language fundamentals used in frontend and backend JavaScript work.",
+        "react": "Check React components, state, effects, and accessible form patterns.",
+        "sql": "Check relational data, queries, joins, constraints, and transactions.",
+        "rest_apis": "Check HTTP methods, status codes, request validation, and REST conventions.",
+        "git": "Check everyday source control, branching, remote updates, and conflict handling.",
+        "python": "Check Python data types, functions, collections, and error handling.",
+        "html_css": "Check semantic markup, responsive layout, and core CSS concepts.",
+    }
     required = set((role or {}).get("core_skills", []) + (role or {}).get("advanced_skills", []))
     out = []
     for skill_id, item in QUESTION_BANK.items():
         if item["skill"].lower() in {s.lower() for s in required}:
-            out.append({"id": skill_id, "name": item["name"], "skill": item["skill"], "question_count": 10,
+            out.append({"id": skill_id, "name": item["name"], "skill": item["skill"], "description": descriptions[skill_id], "question_count": 10,
                         "required_level": "Proficient" if item["skill"] in (role or {}).get("core_skills", []) else "Advanced",
                         **skill_progress(attempts, skill_id)})
     return out

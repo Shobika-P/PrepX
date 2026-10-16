@@ -143,6 +143,13 @@ export function StudentProvider({ children }) {
     }
   }, [activeStudentId, selectedRoleId, currentUser, authToken]);
 
+  const refreshAcademicAudit = useCallback(async () => {
+    if (!activeStudentId || !authToken) throw new Error('Sign in to refresh the academic audit.');
+    const response = await api.getAcademicAudit(activeStudentId, authToken);
+    setAcademicAudit(response.audit);
+    return response.audit;
+  }, [activeStudentId, authToken]);
+
   useEffect(() => {
     if (activeStudentId && authToken) {
       loadStudentData();
@@ -370,6 +377,7 @@ export function StudentProvider({ children }) {
     setTheme,
     refreshStudents,
     refreshStudentData: loadStudentData,
+    refreshAcademicAudit,
     resetToSeed
   };
 
