@@ -97,9 +97,9 @@ def generate_personalized_recommendations(
 
     # 2. ATTENDANCE INTERVENTIONS
     attendance_data = audit.get("attendance_analysis", {})
-    att_pct = attendance_data.get("percentage", 100.0)
+    att_pct = attendance_data.get("percentage") if attendance_data else None
     
-    if att_pct < 75.0:
+    if att_pct is not None and att_pct < 75.0:
         needed_75 = attendance_data.get("classes_to_reach_75", 0)
         recommendations_list.append({
             "id": "rec_attendance_critical",
@@ -116,7 +116,7 @@ def generate_personalized_recommendations(
             "recommended_resources": ["Department Attendance Office", "Academic Mentor Consultation"],
             "target_timeframe": "Immediate (This Week)"
         })
-    elif att_pct < 80.0:
+    elif att_pct is not None and att_pct < 80.0:
         needed_85 = attendance_data.get("classes_to_reach_85", 0)
         recommendations_list.append({
             "id": "rec_attendance_warning",
@@ -221,6 +221,6 @@ def generate_ai_enhanced_insights(student_data: Dict[str, Any], prompt_override:
     # This design allows drop-in LLM expansion without breaking core APIs
     return {
         "ai_powered": False,
-        "message": "AI campus advisor synthesized custom recommendations from academic audit and industry skill-matrix data.",
-        "model_version": "CampusAuditEngine-v1.0 (Rule-Based + ML Ready)"
+        "message": "Recommendations were produced by the transparent local rules engine using your saved academic and skill data.",
+        "model_version": "CampusAuditEngine-v1.0 (Rule-Based)"
     }

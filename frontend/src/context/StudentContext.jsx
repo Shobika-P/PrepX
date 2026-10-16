@@ -5,9 +5,7 @@ const StudentContext = createContext();
 
 export function StudentProvider({ children }) {
   const [students, setStudents] = useState([]);
-  const [activeStudentId, setActiveStudentId] = useState(() => {
-    return localStorage.getItem('campus_active_student_id') || null;
-  });
+  const [activeStudentId, setActiveStudentId] = useState(null);
   const [careerRoles, setCareerRoles] = useState([]);
   const [selectedRoleId, setSelectedRoleId] = useState(null);
 
@@ -31,6 +29,7 @@ export function StudentProvider({ children }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [notice, setNotice] = useState(null);
   const [systemStatus, setSystemStatus] = useState({ online: false, dbMode: 'Connecting...' });
 
   useEffect(() => {
@@ -50,19 +49,19 @@ export function StudentProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      const [healthRes, rolesRes, studentsRes] = await Promise.allSettled([
+      const [healthRes, rolesRes] = await Promise.allSettled([
         api.getHealth(),
-        api.getCareerRoles(),
-        api.getStudents()
+        api.getCareerRoles()
       ]);
 
       if (healthRes.status === 'fulfilled') {
         setSystemStatus({
           online: true,
-          dbMode: healthRes.value.mongo_connected ? 'MongoDB Live' : 'Embedded Resilient DB'
+          persistent: Boolean(healthRes.value.persistent_storage),
+          dbMode: healthRes.value.persistent_storage ? 'MongoDB persistent' : 'Temporary in-memory storage'
         });
       } else {
-        setSystemStatus({ online: false, dbMode: 'Backend Disconnected' });
+        setSystemStatus({ online: false, persistent: false, dbMode: 'Backend disconnected' });
       }
 
       let fetchedRoles = [];
@@ -71,11 +70,7 @@ export function StudentProvider({ children }) {
         setCareerRoles(fetchedRoles);
       }
 
-      let studentList = [];
-      if (studentsRes.status === 'fulfilled' && studentsRes.value.data) {
-        studentList = studentsRes.value.data.slice(0, 1);
-        setStudents(studentList);
-      }
+      setStudents([]);
 
       // Check stored auth session
       const storedToken = localStorage.getItem('campus_auth_token');
@@ -87,7 +82,7 @@ export function StudentProvider({ children }) {
             setIsSignedIn(true);
             setAuthToken(storedToken);
             setActiveStudentId(userRes.user.id);
-            setSelectedRoleId(userRes.user.target_role || (fetchedRoles[0]?.id || 'full_stack_dev'));
+            setSelectedRoleId(userRes.user.target_role || null);
             setLoading(false);
             return;
           }
@@ -104,12 +99,7 @@ export function StudentProvider({ children }) {
       setIsSignedIn(false);
       localStorage.removeItem('campus_signed_in');
 
-      // Fallback if no active student selected yet
-      if (studentList.length > 0) {
-        const firstStudent = studentList[0];
-        setActiveStudentId(firstStudent.id);
-        setSelectedRoleId(firstStudent.target_role || (fetchedRoles[0]?.id || 'full_stack_dev'));
-      }
+      setActiveStudentId(null);
     } catch (err) {
       console.error('Initialization error:', err);
       setError(err.message || 'Failed to initialize application.');
@@ -129,14 +119,16 @@ export function StudentProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      const activeStu = students.find(s => s.id === activeStudentId || s.roll_number === activeStudentId) || currentUser;
-      const targetRole = selectedRoleId || activeStu?.target_role || 'full_stack_dev';
+      if (!authToken || !currentUser) return;
+      const activeStu = currentUser;
+      const targetRole = selectedRoleId || activeStu?.target_role;
+      if (!targetRole) throw new Error('Choose a career goal in your profile to load career analysis.');
 
       const [auditRes, gapRes, recRes, reportRes] = await Promise.all([
-        api.getAcademicAudit(activeStudentId),
-        api.getSkillGap(activeStudentId, targetRole),
-        api.getRecommendations(activeStudentId, targetRole),
-        api.getStudentReport(activeStudentId, targetRole)
+        api.getAcademicAudit(activeStudentId, authToken),
+        api.getSkillGap(activeStudentId, targetRole, authToken),
+        api.getRecommendations(activeStudentId, targetRole, authToken),
+        api.getStudentReport(activeStudentId, targetRole, authToken)
       ]);
 
       setAcademicAudit(auditRes.audit);
@@ -149,10 +141,10 @@ export function StudentProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [activeStudentId, selectedRoleId, students, currentUser]);
+  }, [activeStudentId, selectedRoleId, currentUser, authToken]);
 
   useEffect(() => {
-    if (activeStudentId) {
+    if (activeStudentId && authToken) {
       loadStudentData();
     }
   }, [activeStudentId, selectedRoleId, loadStudentData]);
@@ -178,7 +170,8 @@ export function StudentProvider({ children }) {
         }
 
         // Refresh list of students
-        setStudents([{ ...res.user }]);
+        setStudents([res.user]);
+        setNotice('Your profile was created and saved.');
 
         setAuthModalOpen(false);
         return res;
@@ -213,7 +206,7 @@ export function StudentProvider({ children }) {
         }
 
         // Refresh list of students
-        setStudents([{ ...res.user }]);
+        setStudents([res.user]);
 
         setAuthModalOpen(false);
         return res;
@@ -235,11 +228,11 @@ export function StudentProvider({ children }) {
     setCurrentUser(null);
     setIsSignedIn(false);
     localStorage.removeItem('campus_signed_in');
-
-    if (students.length > 0) {
-      setActiveStudentId(students[0].id);
-      setSelectedRoleId(students[0].target_role || 'full_stack_dev');
-    }
+    localStorage.removeItem('campus_active_student_id');
+    setActiveStudentId(null);
+    setStudents([]);
+    setAcademicAudit(null); setSkillGap(null); setRecommendations(null); setReportData(null);
+    setNotice(null);
   };
 
   // Update profile and instantly refresh analytics memory
@@ -271,6 +264,7 @@ export function StudentProvider({ children }) {
         }
 
         await loadStudentData();
+        setNotice('Changes saved to your profile.');
         setProfileModalOpen(false);
         return updatedUser;
       }
@@ -307,6 +301,10 @@ export function StudentProvider({ children }) {
   // Handler to switch target career role
   const selectRole = (roleId) => {
     setSelectedRoleId(roleId);
+    if (currentUser && roleId !== currentUser.target_role) {
+      updateProfile({ target_role: roleId, career_goal: { ...(currentUser.career_goal || {}), target_role: roleId } })
+        .catch(() => setSelectedRoleId(currentUser.target_role || null));
+    }
   };
 
   // Reload all students
@@ -332,8 +330,8 @@ export function StudentProvider({ children }) {
     }
   };
 
-  const activeStudent = students.find(s => s.id === activeStudentId || s.roll_number === activeStudentId) || currentUser || students[0] || null;
-  const activeRole = careerRoles.find(r => r.id === selectedRoleId) || careerRoles[0] || null;
+  const activeStudent = currentUser;
+  const activeRole = careerRoles.find(r => r.id === selectedRoleId) || null;
 
   const value = {
     students,
@@ -365,6 +363,8 @@ export function StudentProvider({ children }) {
     loading,
     error,
     setError,
+    notice,
+    setNotice,
     systemStatus,
     theme,
     setTheme,

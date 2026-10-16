@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, XCircle, Layers, PlusCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, Layers, PlusCircle, ChevronDown } from 'lucide-react';
 import { useStudent } from '../../context/StudentContext';
 
 export default function MissingSkillsMatrix({ skillGap }) {
@@ -11,6 +11,10 @@ export default function MissingSkillsMatrix({ skillGap }) {
   const categories = Object.entries(skillGap.categories_breakdown || {}).filter(
     ([_, data]) => data.total > 0
   );
+  const requirements = [
+    ...(skillGap.acquired_core_skills || []), ...(skillGap.missing_core_skills || []),
+    ...(skillGap.acquired_advanced_skills || []), ...(skillGap.missing_advanced_skills || [])
+  ];
 
   const handleAddSkillClick = async (skillName) => {
     setAddingSkill(skillName);
@@ -25,6 +29,32 @@ export default function MissingSkillsMatrix({ skillGap }) {
 
   return (
     <div className="space-y-6">
+
+      <section className="section-card space-y-3">
+        <div>
+          <h3 className="font-bold text-base text-slate-900">Current skills vs role requirements</h3>
+          <p className="mt-1 text-xs text-slate-500">Bars show whether each skill is listed in your profile. The role requires every listed competency; proficiency levels are not currently collected.</p>
+        </div>
+        <div className="space-y-2">
+          {requirements.map((skill) => {
+            const current = skill.status === 'Acquired' ? 100 : 0;
+            return <details key={`${skill.name}-${skill.is_core}`} className="skill-requirement">
+              <summary className="flex cursor-pointer list-none items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
+                <span className={`min-w-0 flex-1 text-sm font-semibold ${current ? 'text-slate-800' : 'text-slate-600'}`}>{skill.name}</span>
+                <span className="hidden w-28 text-right text-[11px] text-slate-500 sm:block">{current ? 'In profile' : 'Not listed'}</span>
+                <span className="h-2 w-20 overflow-hidden rounded-full bg-slate-100 sm:w-28" aria-hidden="true"><span className={`block h-full rounded-full ${current ? 'bg-teal-600' : 'bg-amber-500'}`} style={{ width: `${current}%` }} /></span>
+                <span className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-bold uppercase text-blue-800">{skill.is_core ? 'Core' : 'Advanced'}</span>
+                <ChevronDown className="h-4 w-4 text-slate-400 transition-transform" />
+              </summary>
+              <div className="grid gap-3 border-x border-b border-slate-200 px-4 py-3 text-xs sm:grid-cols-2">
+                <div><span className="font-semibold text-slate-500">Your profile</span><p className="mt-1 font-medium text-slate-800">{current ? 'Listed as an acquired skill' : 'Not listed yet'}</p></div>
+                <div><span className="font-semibold text-slate-500">Role expectation</span><p className="mt-1 font-medium text-slate-800">Required · {skill.is_core ? 'Core competency' : 'Advanced competency'}</p></div>
+                <p className="sm:col-span-2 text-slate-600">{current ? 'Next step: build a project that demonstrates this skill.' : `Gap: ${skill.name} is required for this role. Learn it, practice it, then add it to your profile.`}</p>
+              </div>
+            </details>;
+          })}
+        </div>
+      </section>
       
       {/* Category breakdown cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

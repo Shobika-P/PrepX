@@ -11,14 +11,6 @@ import {
   BookOpen
 } from 'lucide-react';
 
-const DEFAULT_SUBJECTS = [
-  { code: 'CS601', name: 'Data Structures & Algorithms', marks: 80, credits: 4 },
-  { code: 'CS602', name: 'Database Management Systems (DBMS)', marks: 75, credits: 4 },
-  { code: 'CS603', name: 'Operating Systems', marks: 70, credits: 3 },
-  { code: 'CS604', name: 'Computer Networks', marks: 65, credits: 3 },
-  { code: 'CS605', name: 'Web Technologies', marks: 85, credits: 3 },
-];
-
 export default function StudentFormModal({ isOpen, onClose, studentToEdit = null }) {
   const { careerRoles, refreshStudents, selectStudent } = useStudent();
 
@@ -26,13 +18,13 @@ export default function StudentFormModal({ isOpen, onClose, studentToEdit = null
     name: '',
     roll_number: '',
     email: '',
-    semester: 6,
-    department: 'Computer Science & Engineering',
-    target_role: 'full_stack_dev',
-    attendance_percentage: 85.0,
+    semester: '',
+    department: '',
+    target_role: '',
+    attendance_percentage: '',
     technical_skills: '',
     completed_courses: '',
-    subjects: DEFAULT_SUBJECTS
+    subjects: []
   });
 
   const [error, setError] = useState(null);
@@ -44,32 +36,30 @@ export default function StudentFormModal({ isOpen, onClose, studentToEdit = null
         name: studentToEdit.name || '',
         roll_number: studentToEdit.roll_number || '',
         email: studentToEdit.email || '',
-        semester: studentToEdit.semester || 6,
-        department: studentToEdit.department || 'Computer Science & Engineering',
-        target_role: studentToEdit.target_role || 'full_stack_dev',
-        attendance_percentage: studentToEdit.attendance_percentage || 85.0,
+        semester: studentToEdit.semester || '',
+        department: studentToEdit.department || '',
+        target_role: studentToEdit.target_role || '',
+        attendance_percentage: studentToEdit.attendance_percentage ?? '',
         technical_skills: Array.isArray(studentToEdit.technical_skills)
           ? studentToEdit.technical_skills.join(', ')
           : studentToEdit.technical_skills || '',
         completed_courses: Array.isArray(studentToEdit.completed_courses)
           ? studentToEdit.completed_courses.join(', ')
           : studentToEdit.completed_courses || '',
-        subjects: studentToEdit.subjects && studentToEdit.subjects.length > 0
-          ? studentToEdit.subjects
-          : DEFAULT_SUBJECTS
+        subjects: studentToEdit.subjects || []
       });
     } else {
       setFormData({
         name: '',
         roll_number: '',
         email: '',
-        semester: 6,
-        department: 'Computer Science & Engineering',
-        target_role: 'full_stack_dev',
-        attendance_percentage: 85.0,
-        technical_skills: 'HTML, CSS, JavaScript, Python, Git, SQL',
-        completed_courses: 'Full Stack Web Development, Python Programming',
-        subjects: DEFAULT_SUBJECTS
+        semester: '',
+        department: '',
+        target_role: '',
+        attendance_percentage: '',
+        technical_skills: '',
+        completed_courses: '',
+        subjects: []
       });
     }
     setError(null);
@@ -91,7 +81,7 @@ export default function StudentFormModal({ isOpen, onClose, studentToEdit = null
       ...formData,
       subjects: [
         ...formData.subjects,
-        { code: `SUB0${formData.subjects.length + 1}`, name: '', marks: 75, credits: 3 }
+        { code: `SUB0${formData.subjects.length + 1}`, name: '', marks: '', credits: 3 }
       ]
     });
   };

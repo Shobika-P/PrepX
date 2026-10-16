@@ -4,7 +4,7 @@ Handles student account creation, secure login, persistent session lookup, and p
 """
 
 from flask import Blueprint, request, jsonify
-from database.db import get_students_collection
+from database.db import get_students_collection, get_careers_collection
 from models.student_model import validate_student_data, serialize_student
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
@@ -12,7 +12,7 @@ import uuid
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
 def get_bearer_token(req):
-    """Extracts token or user identifier from request headers."""
+    """Extracts a bearer token from request headers."""
     auth_header = req.headers.get("Authorization")
     if auth_header and auth_header.startswith("Bearer "):
         return auth_header.split(" ")[1].strip()
@@ -28,13 +28,13 @@ def register_student():
 
         email = str(data.get("email", "")).strip().lower()
         roll_number = str(data.get("roll_number", "")).strip().upper()
-        password = str(data.get("password", "student123")).strip()
+        password = str(data.get("password", ""))
         name = str(data.get("name", "")).strip()
 
         if not name:
             return jsonify({"status": "error", "message": "Full Name is required."}), 400
-        if not roll_number:
-            return jsonify({"status": "error", "message": "Roll Number is required."}), 400
+        if len(password) < 8:
+            return jsonify({"status": "error", "message": "Password must be at least 8 characters."}), 400
         if not email:
             return jsonify({"status": "error", "message": "Email address is required."}), 400
 
@@ -43,20 +43,23 @@ def register_student():
         if existing:
             return jsonify({"status": "error", "message": "A student account with this Email or Roll Number already exists."}), 409
 
-        if "subjects" not in data or data["subjects"] is None:
-            data["subjects"] = []
+        if not data.get("department") or not data.get("semester") or not data.get("target_role"):
+            return jsonify({"status": "error", "message": "Department, semester, and career goal are required to create a profile."}), 400
+        if not get_careers_collection().find_one({"id": str(data["target_role"]).strip()}):
+            return jsonify({"status": "error", "message": "Select a career role from the available options."}), 400
+        data["subjects"] = data.get("subjects") or []
 
         validated_data = validate_student_data(data, is_update=False)
 
         student_id = f"STU_{uuid.uuid4().hex[:6].upper()}"
-        session_token = f"TOKEN_{uuid.uuid4().hex}"
+        session_token = uuid.uuid4().hex + uuid.uuid4().hex
 
         validated_data["id"] = student_id
         validated_data["email"] = email
         validated_data["password_hash"] = generate_password_hash(password)
         validated_data["token"] = session_token
         validated_data["career_goal"] = data.get("career_goal", {
-            "target_role": validated_data.get("target_role", "full_stack_dev"),
+            "target_role": validated_data.get("target_role"),
             "target_companies": [],
             "salary_expectation": "",
             "work_preference": "",
@@ -65,8 +68,6 @@ def register_student():
 
         col.insert_one(validated_data)
         user_data = serialize_student(validated_data)
-        if "password_hash" in user_data:
-            del user_data["password_hash"]
 
         return jsonify({
             "status": "success",
@@ -85,7 +86,7 @@ def login_student():
     try:
         data = request.get_json() or {}
         identifier = str(data.get("identifier", "")).strip()
-        password = str(data.get("password", "")).strip()
+        password = str(data.get("password", ""))
 
         if not identifier:
             return jsonify({"status": "error", "message": "Email or Roll Number is required."}), 400
@@ -109,7 +110,7 @@ def login_student():
         else:
             return jsonify({"status": "error", "message": "This account has no password configured. Create a student profile to continue."}), 401
 
-        session_token = student.get("token") or f"TOKEN_{uuid.uuid4().hex}"
+        session_token = uuid.uuid4().hex + uuid.uuid4().hex
         col.update_one({"id": student["id"]}, {"$set": {"token": session_token}})
 
         user_data = serialize_student(student)
@@ -135,13 +136,7 @@ def get_current_user():
             return jsonify({"status": "error", "message": "No authorization token provided."}), 401
 
         col = get_students_collection()
-        student = col.find_one({
-            "$or": [
-                {"token": token},
-                {"id": token},
-                {"roll_number": token.upper()}
-            ]
-        })
+        student = col.find_one({"token": token})
 
         if not student:
             return jsonify({"status": "error", "message": "Session expired or invalid token."}), 401
@@ -163,27 +158,30 @@ def update_profile():
     try:
         data = request.get_json() or {}
         token = get_bearer_token(request)
-        student_id = data.get("id") or data.get("student_id") or token
-
-        if not student_id:
-            return jsonify({"status": "error", "message": "Student identifier or token required."}), 400
+        if not token:
+            return jsonify({"status": "error", "message": "Authentication required."}), 401
 
         col = get_students_collection()
-        existing = col.find_one({
-            "$or": [
-                {"id": student_id},
-                {"token": token},
-                {"roll_number": str(student_id).upper()}
-            ]
-        })
+        existing = col.find_one({"token": token})
 
         if not existing:
             return jsonify({"status": "error", "message": "Student profile not found."}), 404
 
         target_id = existing["id"]
 
+        if data.get("id") and data["id"] != target_id:
+            return jsonify({"status": "error", "message": "You cannot update another student's profile."}), 403
+
         # Clean student fields
         validated = validate_student_data(data, is_update=True)
+
+        for unique_field in ("email", "roll_number"):
+            if unique_field in validated:
+                duplicate = col.find_one({unique_field: validated[unique_field]})
+                if duplicate and duplicate.get("id") != target_id:
+                    return jsonify({"status": "error", "message": f"That {unique_field.replace('_', ' ')} is already in use."}), 409
+        if validated.get("target_role") and not get_careers_collection().find_one({"id": validated["target_role"]}):
+            return jsonify({"status": "error", "message": "Select a career role from the available options."}), 400
 
         if "career_goal" in data and isinstance(data["career_goal"], dict):
             validated["career_goal"] = data["career_goal"]

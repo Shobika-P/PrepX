@@ -12,8 +12,8 @@ export default function Navbar() {
       </button>
       <div className="header-actions">
         <label className="role-picker"><span>Career focus</span><select value={activeRole?.id || ''} onChange={(e) => selectRole(e.target.value)}>{careerRoles.map((role) => <option key={role.id} value={role.id}>{role.title}</option>)}</select><ChevronDown size={14} /></label>
-        <span className={`system-pill ${systemStatus.online ? 'online' : ''}`}><i />{systemStatus.online ? 'Connected' : 'Offline'}</span>
-        <div className="account-chip"><span className="avatar">{activeStudent?.name?.charAt(0) || 'N'}</span><span><strong>{activeStudent?.name || 'Neha'}</strong><small>Student account</small></span></div>
+        <span className={`system-pill ${systemStatus.online && systemStatus.persistent ? 'online' : systemStatus.online ? 'volatile' : ''}`} title={systemStatus.dbMode}><i />{systemStatus.online ? systemStatus.persistent ? 'Connected' : 'Temporary storage' : 'Offline'}</span>
+        <div className="account-chip"><span className="avatar">{activeStudent?.name?.charAt(0) || '?'}</span><span><strong>{activeStudent?.name || 'Student'}</strong><small>Student account</small></span></div>
         <button className="icon-button profile-action" onClick={() => setProfileModalOpen(true)} title="Edit profile" aria-label="Edit profile"><PencilLine size={17} /></button>
         <button className="icon-button report-action" onClick={() => setActiveTab('report')} title="View report" aria-label="View report"><Printer size={17} /></button>
         <button className="icon-button theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`} aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button>

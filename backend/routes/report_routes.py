@@ -10,10 +10,12 @@ from services.skill_gap_service import analyze_skill_gap
 from services.recommendation_service import generate_personalized_recommendations
 from models.student_model import serialize_student
 from models.career_model import serialize_career_role
+from auth import authenticated
 
 report_bp = Blueprint("reports", __name__, url_prefix="/api/reports")
 
 @report_bp.route("/student/<student_id>", methods=["GET"])
+@authenticated
 def get_unified_student_report(student_id):
     """
     Generates a consolidated holistic student dossier containing:
@@ -27,14 +29,17 @@ def get_unified_student_report(student_id):
         students_col = get_students_collection()
         careers_col = get_careers_collection()
 
-        student = students_col.find_one({"$or": [{"id": student_id}, {"roll_number": student_id}]})
+        from flask import g
+        student = g.student
         if not student:
             return jsonify({"status": "error", "message": f"Student '{student_id}' not found."}), 404
 
         student_dict = serialize_student(student)
-        role_id = request.args.get("role") or student_dict.get("target_role", "full_stack_dev")
+        role_id = request.args.get("role") or student_dict.get("target_role")
 
-        career_role = careers_col.find_one({"id": role_id}) or careers_col.find_one({})
+        career_role = careers_col.find_one({"id": role_id})
+        if not career_role:
+            return jsonify({"status": "error", "message": "Selected career role is not configured."}), 404
         career_dict = serialize_career_role(career_role)
 
         # Run Audits

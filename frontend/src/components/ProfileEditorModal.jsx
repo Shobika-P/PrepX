@@ -18,8 +18,8 @@ export default function ProfileEditorModal() {
   const [rollNumber, setRollNumber] = useState('');
   const [email, setEmail] = useState('');
   const [department, setDepartment] = useState('');
-  const [semester, setSemester] = useState(6);
-  const [attendance, setAttendance] = useState(80);
+  const [semester, setSemester] = useState('');
+  const [attendance, setAttendance] = useState('');
   
   // Subjects State
   const [subjects, setSubjects] = useState([]);
@@ -29,11 +29,14 @@ export default function ProfileEditorModal() {
   const [newSkillInput, setNewSkillInput] = useState('');
   const [completedCourses, setCompletedCourses] = useState([]);
   const [newCourseInput, setNewCourseInput] = useState('');
+  const [projects, setProjects] = useState('');
+  const [certifications, setCertifications] = useState('');
+  const [internships, setInternships] = useState('');
 
   // Career Goal State
-  const [targetRole, setTargetRole] = useState('full_stack_dev');
-  const [salaryExpectation, setSalaryExpectation] = useState('8-12 LPA');
-  const [workPreference, setWorkPreference] = useState('Hybrid');
+  const [targetRole, setTargetRole] = useState('');
+  const [salaryExpectation, setSalaryExpectation] = useState('');
+  const [workPreference, setWorkPreference] = useState('');
   const [targetCompanies, setTargetCompanies] = useState('');
 
   const [saving, setSaving] = useState(false);
@@ -45,19 +48,22 @@ export default function ProfileEditorModal() {
       setName(activeStudent.name || '');
       setRollNumber(activeStudent.roll_number || '');
       setEmail(activeStudent.email || '');
-      setDepartment(activeStudent.department || 'Computer Science & Engineering');
-      setSemester(activeStudent.semester || 1);
-      setAttendance(activeStudent.attendance_percentage !== undefined ? activeStudent.attendance_percentage : 100);
+      setDepartment(activeStudent.department || '');
+      setSemester(activeStudent.semester || '');
+      setAttendance(activeStudent.attendance_percentage ?? '');
 
       setSubjects(activeStudent.subjects ? [...activeStudent.subjects] : []);
       setTechnicalSkills(activeStudent.technical_skills ? [...activeStudent.technical_skills] : []);
       setCompletedCourses(activeStudent.completed_courses ? [...activeStudent.completed_courses] : []);
+      setProjects((activeStudent.projects || []).join(', '));
+      setCertifications((activeStudent.certifications || []).join(', '));
+      setInternships((activeStudent.internships || []).join(', '));
 
-      setTargetRole(activeStudent.target_role || 'full_stack_dev');
+      setTargetRole(activeStudent.target_role || '');
 
       const cg = activeStudent.career_goal || {};
       setSalaryExpectation(cg.salary_expectation || '');
-      setWorkPreference(cg.work_preference || 'Hybrid');
+      setWorkPreference(cg.work_preference || '');
       setTargetCompanies(
         Array.isArray(cg.target_companies)
           ? cg.target_companies.join(', ')
@@ -78,7 +84,7 @@ export default function ProfileEditorModal() {
   const handleAddSubject = () => {
     setSubjects([
       ...subjects,
-      { code: `SUB${String(subjects.length + 1).padStart(2, '0')}`, name: '', marks: 75, credits: 3 }
+      { code: `SUB${String(subjects.length + 1).padStart(2, '0')}`, name: '', marks: '', credits: 3 }
     ]);
   };
 
@@ -117,8 +123,8 @@ export default function ProfileEditorModal() {
     setSaving(true);
     setMessage({ type: '', text: '' });
     try {
-      if (subjects.some((subject) => !subject.code?.trim() || !subject.name?.trim())) {
-        throw new Error('Add both a subject code and subject name, or remove the incomplete row.');
+      if (subjects.some((subject) => !subject.code?.trim() || !subject.name?.trim() || subject.marks === '' || subject.marks == null)) {
+        throw new Error('Add the subject code, name, and marks, or remove the incomplete row.');
       }
       const companiesList = targetCompanies.split(',').map(c => c.trim()).filter(Boolean);
 
@@ -128,10 +134,13 @@ export default function ProfileEditorModal() {
         email,
         department,
         semester: Number(semester),
-        attendance_percentage: Number(attendance),
+        ...(attendance !== '' ? { attendance_percentage: Number(attendance) } : {}),
         subjects,
         technical_skills: technicalSkills,
         completed_courses: completedCourses,
+        projects: projects.split(',').map((item) => item.trim()).filter(Boolean),
+        certifications: certifications.split(',').map((item) => item.trim()).filter(Boolean),
+        internships: internships.split(',').map((item) => item.trim()).filter(Boolean),
         target_role: targetRole,
         career_goal: {
           target_role: targetRole,
@@ -262,21 +271,24 @@ export default function ProfileEditorModal() {
                     onChange={(e) => setSemester(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs outline-none focus:ring-2 focus:ring-indigo-500"
                   >
+                    <option value="">Select semester</option>
                     {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
                       <option key={s} value={s}>Semester {s}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Attendance (%): {attendance}%</label>
+                  <label htmlFor="profile-attendance" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Attendance percentage <span className="font-normal text-slate-400">(optional)</span></label>
                   <input
-                    type="range"
+                    id="profile-attendance"
+                    type="number"
                     min="0"
                     max="100"
-                    step="0.5"
+                    step="0.01"
                     value={attendance}
                     onChange={(e) => setAttendance(e.target.value)}
-                    className="w-full accent-indigo-600"
+                    placeholder="0 to 100"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
               </div>
@@ -479,6 +491,11 @@ export default function ProfileEditorModal() {
                     + Add Course
                   </button>
                 </div>
+              </div>
+              <div className="grid grid-cols-1 gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Projects <span className="font-normal text-slate-400">(comma separated)</span><input value={projects} onChange={(e) => setProjects(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800" /></label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Certifications <span className="font-normal text-slate-400">(comma separated)</span><input value={certifications} onChange={(e) => setCertifications(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800" /></label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Internships and experience <span className="font-normal text-slate-400">(comma separated)</span><input value={internships} onChange={(e) => setInternships(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800" /></label>
               </div>
             </div>
           )}

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export default function AcademicAuditView() {
-  const { activeStudent, academicAudit, loading } = useStudent();
+  const { activeStudent, academicAudit, loading, setProfileModalOpen } = useStudent();
 
   if (loading && !academicAudit) {
     return (
@@ -33,6 +33,14 @@ export default function AcademicAuditView() {
         <p className="text-slate-500">No academic audit data available for this student.</p>
       </div>
     );
+  }
+
+  if (!academicAudit.total_subjects) {
+    return <section className="section-card academic-empty"><BookOpen className="mx-auto mb-3 text-slate-400" size={30} />
+      <h1 className="text-xl font-bold text-slate-900">Your academic audit is ready when you are</h1>
+      <p className="mt-2 text-sm text-slate-600">No subject records are saved yet, so averages and grade charts are not calculated.</p>
+      <button className="solid-button academic-empty-action" onClick={() => setProfileModalOpen(true)}>Add academic records</button>
+    </section>;
   }
 
   const getStatusBadge = (marks) => {

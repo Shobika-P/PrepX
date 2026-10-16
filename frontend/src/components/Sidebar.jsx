@@ -21,7 +21,7 @@ export default function Sidebar() {
   const { activeTab, setActiveTab, activeStudent, academicAudit, skillGap } = useStudent();
 
   return (
-    <aside className="app-sidebar w-full md:w-64 bg-white md:min-h-[calc(100vh-4rem)] border-r border-slate-200 p-4 flex flex-col justify-between shrink-0">
+    <aside className="app-sidebar w-full md:w-64 bg-white min-h-0 border-r border-slate-200 p-4 flex flex-col justify-between shrink-0">
       <div className="space-y-6">
         
         {/* Navigation Section */}
@@ -84,13 +84,13 @@ export default function Sidebar() {
               <div className="bg-white/10 rounded-xl p-2 border border-white/5">
                 <p className="text-[10px] text-indigo-200">Avg Score</p>
                 <p className="font-bold text-white text-sm">
-                  {academicAudit?.average_marks ? `${academicAudit.average_marks}%` : '--'}
+                  {academicAudit?.average_marks != null ? `${academicAudit.average_marks}%` : '--'}
                 </p>
               </div>
               <div className="bg-white/10 rounded-xl p-2 border border-white/5">
                 <p className="text-[10px] text-indigo-200">Readiness</p>
                 <p className="font-bold text-emerald-300 text-sm">
-                  {skillGap?.overall_readiness_score ? `${skillGap.overall_readiness_score}%` : '--'}
+                  {skillGap?.overall_readiness_score != null ? `${skillGap.overall_readiness_score}%` : '--'}
                 </p>
               </div>
             </div>

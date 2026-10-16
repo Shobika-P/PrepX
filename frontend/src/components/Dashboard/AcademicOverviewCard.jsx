@@ -13,7 +13,7 @@ import { Award, AlertCircle, ArrowRight } from 'lucide-react';
 import { useStudent } from '../../context/StudentContext';
 
 export default function AcademicOverviewCard() {
-  const { academicAudit, setActiveTab } = useStudent();
+  const { academicAudit, setActiveTab, setProfileModalOpen } = useStudent();
 
   if (!academicAudit) return null;
 
@@ -23,6 +23,15 @@ export default function AcademicOverviewCard() {
     marks: s.marks,
     grade: s.letter_grade
   }));
+
+  if (data.length === 0) return (
+    <section className="section-card flex flex-col items-center py-8 text-center">
+      <AlertCircle className="mb-2 text-slate-400" size={24} />
+      <h3 className="font-bold text-sm text-slate-900">No subject marks yet</h3>
+      <p className="mt-1 text-xs text-slate-500">Add your records to see the academic chart and audit.</p>
+      <button onClick={() => setProfileModalOpen(true)} className="mt-4 text-xs font-semibold text-indigo-700 hover:underline">Add academic records</button>
+    </section>
+  );
 
   const getBarColor = (marks) => {
     if (marks >= 75) return '#10b981';

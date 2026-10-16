@@ -20,8 +20,6 @@ def validate_student_data(data: Dict[str, Any], is_update: bool = False) -> Dict
 
     cleaned = {}
 
-    if "id" in data:
-        cleaned["id"] = str(data["id"]).strip()
     if "name" in data:
         name = str(data["name"]).strip()
         if len(name) < 2:
@@ -33,7 +31,21 @@ def validate_student_data(data: Dict[str, Any], is_update: bool = False) -> Dict
             raise ValueError("Roll number cannot be empty.")
         cleaned["roll_number"] = roll
     if "email" in data:
-        cleaned["email"] = str(data["email"]).strip().lower()
+        email = str(data["email"]).strip().lower()
+        if email and ("@" not in email or "." not in email.rsplit("@", 1)[-1]):
+            raise ValueError("Enter a valid email address.")
+        cleaned["email"] = email
+    for field in ("college", "degree", "year", "primary_goal", "learning_timeframe"):
+        if field in data:
+            cleaned[field] = str(data[field]).strip()
+    if "cgpa" in data and data["cgpa"] not in (None, ""):
+        try:
+            cgpa = float(data["cgpa"])
+            if cgpa < 0 or cgpa > 10:
+                raise ValueError
+            cleaned["cgpa"] = round(cgpa, 2)
+        except (ValueError, TypeError):
+            raise ValueError("CGPA must be between 0 and 10.")
     if "semester" in data:
         try:
             sem = int(data["semester"])
@@ -72,6 +84,12 @@ def validate_student_data(data: Dict[str, Any], is_update: bool = False) -> Dict
             cleaned["completed_courses"] = [c.strip() for c in courses.split(",") if c.strip()]
         else:
             cleaned["completed_courses"] = []
+    for field in ("projects", "certifications", "internships", "preferred_skills", "roadmap_progress"):
+        if field in data:
+            value = data[field]
+            cleaned[field] = [str(item).strip() for item in value if str(item).strip()] if isinstance(value, list) else []
+    if "career_goal" in data and isinstance(data["career_goal"], dict):
+        cleaned["career_goal"] = data["career_goal"]
 
     if "subjects" in data:
         raw_subjects = data["subjects"]
@@ -92,7 +110,12 @@ def validate_student_data(data: Dict[str, Any], is_update: bool = False) -> Dict
                 except ValueError:
                     raise ValueError(f"Invalid marks value for subject '{name}'.")
                 
-                credits_val = int(s.get("credits", 3))
+                try:
+                    credits_val = int(s.get("credits", 3))
+                except (ValueError, TypeError):
+                    raise ValueError(f"Credits for '{name}' must be a whole number from 1 to 30.")
+                if credits_val < 1 or credits_val > 30:
+                    raise ValueError(f"Credits for '{name}' must be a whole number from 1 to 30.")
                 code = str(s.get("code", "")).strip() or name[:4].upper()
 
                 valid_subjects.append({
@@ -117,4 +140,5 @@ def serialize_student(doc: Dict[str, Any]) -> Dict[str, Any]:
         del res["_id"]
     res.pop("password_hash", None)
     res.pop("_neha_account_initialized", None)
+    res.pop("token", None)
     return res

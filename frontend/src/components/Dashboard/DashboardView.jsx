@@ -7,12 +7,11 @@ import AttendanceWidget from './AttendanceWidget';
 import TopRecommendationsCard from './TopRecommendationsCard';
 import { 
   GraduationCap, 
-  Award, 
-  Clock, 
   Compass, 
   Sparkles,
   BookOpen,
-  ArrowUpRight
+  UserRoundCheck,
+  ListChecks
 } from 'lucide-react';
 
 export default function DashboardView() {
@@ -37,11 +36,22 @@ export default function DashboardView() {
     );
   }
 
-  const avgMarks = academicAudit?.average_marks || 0;
-  const gpa = academicAudit?.weighted_gpa || 0;
-  const attendance = academicAudit?.attendance_analysis?.percentage || 0;
-  const readiness = skillGap?.overall_readiness_score || 0;
-  const targetRoleTitle = skillGap?.role_title || activeRole?.title || 'Full-Stack Developer';
+  const avgMarks = academicAudit?.average_marks;
+  const gpa = academicAudit?.weighted_gpa;
+  const attendance = academicAudit?.attendance_analysis?.percentage;
+  const readiness = skillGap?.overall_readiness_score;
+  const targetRoleTitle = skillGap?.role_title || activeRole?.title || 'your selected role';
+  const profileSections = [
+    Boolean(activeStudent?.name), Boolean(activeStudent?.email), Boolean(activeStudent?.department),
+    Boolean(activeStudent?.semester), activeStudent?.cgpa != null, Boolean(activeStudent?.target_role),
+    Boolean(activeStudent?.technical_skills?.length), Boolean(activeStudent?.subjects?.length)
+  ];
+  const completedProfileSections = profileSections.filter(Boolean).length;
+  const profileCompletion = Math.round((completedProfileSections / profileSections.length) * 100);
+  const roadmap = recommendations?.thirty_day_plan || [];
+  const completedRoadmap = new Set(activeStudent?.roadmap_progress || []);
+  const completedRoadmapCount = roadmap.filter((step) => completedRoadmap.has(`${step.day}:${step.focus}`)).length;
+  const learningProgress = roadmap.length ? Math.round((completedRoadmapCount / roadmap.length) * 100) : null;
 
   return (
     <div className="space-y-6 pb-12">
@@ -64,7 +74,7 @@ export default function DashboardView() {
             </h1>
 
             <p className="text-sm text-indigo-200/90 leading-relaxed">
-              Enrolled in <span className="font-semibold text-white">{activeStudent?.department || 'Computer Science'}</span> (Semester {activeStudent?.semester || 6}).
+              Enrolled in <span className="font-semibold text-white">{activeStudent?.department || 'department not provided'}</span> (Semester {activeStudent?.semester || 'not provided'}).
               Targeting career pathway as <span className="font-semibold text-indigo-300 underline decoration-indigo-400 decoration-2 underline-offset-2">{targetRoleTitle}</span>.
             </p>
           </div>
@@ -91,42 +101,42 @@ export default function DashboardView() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
         <StatCard
           title="Overall Average"
-          value={`${avgMarks}%`}
-          badge={academicAudit?.performance_category || 'Good'}
+          value={avgMarks == null ? 'No records' : `${avgMarks}%`}
+          badge={academicAudit?.performance_category || 'Awaiting data'}
           color={
-            avgMarks >= 85 ? 'emerald' : avgMarks >= 70 ? 'indigo' : avgMarks >= 55 ? 'amber' : 'rose'
+            avgMarks == null ? 'blue' : avgMarks >= 85 ? 'emerald' : avgMarks >= 70 ? 'indigo' : avgMarks >= 55 ? 'amber' : 'rose'
           }
           icon={GraduationCap}
-          subtitle={`Weighted GPA: ${gpa} / 10.0`}
-        />
-
-        <StatCard
-          title="Attendance"
-          value={`${attendance}%`}
-          badge={academicAudit?.attendance_analysis?.badge || 'Normal'}
-          color={attendance >= 85 ? 'emerald' : attendance >= 75 ? 'amber' : 'rose'}
-          icon={Clock}
-          subtitle={
-            attendance >= 75 ? 'Meets Exam Eligibility' : 'Critical Attendance Deficit'
-          }
+          subtitle={gpa == null ? 'Add subject marks to calculate GPA' : `Weighted GPA: ${gpa} / 10.0`}
         />
 
         <StatCard
           title="Career Match"
-          value={`${readiness}%`}
-          badge={skillGap?.readiness_badge || 'Good'}
-          color={readiness >= 75 ? 'emerald' : readiness >= 50 ? 'indigo' : 'amber'}
+          value={readiness == null ? 'Not assessed' : `${readiness}%`}
+          badge={skillGap?.readiness_badge || 'Awaiting data'}
+          color={readiness == null ? 'blue' : readiness >= 75 ? 'emerald' : readiness >= 50 ? 'indigo' : 'amber'}
           icon={Compass}
           subtitle={`For ${targetRoleTitle}`}
         />
 
         <StatCard
-          title="Action Plan"
-          value={`${recommendations?.total_recommendations || 0}`}
-          badge="Prioritized"
-          color="purple"
-          icon={Sparkles}
-          subtitle="Actionable Growth Goals"
+          title="Profile completion"
+          value={`${profileCompletion}%`}
+          badge={`${completedProfileSections}/${profileSections.length} details`}
+          color="blue"
+          icon={UserRoundCheck}
+          subtitle="Add profile data for more useful analysis"
+          progress={profileCompletion}
+        />
+
+        <StatCard
+          title="Learning progress"
+          value={learningProgress == null ? 'No plan' : `${learningProgress}%`}
+          badge={roadmap.length ? `${completedRoadmapCount}/${roadmap.length} complete` : 'Awaiting analysis'}
+          color="emerald"
+          icon={ListChecks}
+          subtitle={roadmap.length ? 'Roadmap tasks saved to your profile' : 'A plan appears when career data loads'}
+          progress={learningProgress}
         />
       </div>
 

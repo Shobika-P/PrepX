@@ -57,6 +57,7 @@ def test_auth_register_and_login(client):
     assert login_res.status_code == 200
     login_data = login_res.get_json()
     assert login_data["user"]["roll_number"] == test_roll
+    token = login_data["token"]
 
     # Test profile update
     update_res = client.put("/api/auth/profile", headers={"Authorization": f"Bearer {token}"}, json={
@@ -68,3 +69,38 @@ def test_auth_register_and_login(client):
     updated_data = update_res.get_json()
     assert "React" in updated_data["user"]["technical_skills"]
     assert updated_data["user"]["attendance_percentage"] == 91.5
+
+
+def test_private_records_require_the_owning_account(client):
+    accounts = []
+    for suffix in ("one", "two"):
+        res = client.post("/api/auth/register", json={
+            "name": f"Student {suffix}", "email": f"{suffix}.{uuid.uuid4().hex[:8]}@campus.edu",
+            "roll_number": f"{suffix.upper()}{uuid.uuid4().hex[:6]}", "password": "securepass123",
+            "department": "Computing", "semester": 2, "target_role": "frontend_dev"
+        })
+        assert res.status_code == 201
+        accounts.append(res.get_json())
+
+    first, second = accounts
+    assert client.get(f"/api/academic/audit/{first['user']['id']}").status_code == 401
+    other_record = client.get(
+        f"/api/academic/audit/{second['user']['id']}",
+        headers={"Authorization": f"Bearer {first['token']}"}
+    )
+    assert other_record.status_code == 403
+    own_record = client.get(
+        f"/api/academic/audit/{first['user']['id']}",
+        headers={"Authorization": f"Bearer {first['token']}"}
+    )
+    assert own_record.status_code == 200
+    assert own_record.get_json()["audit"]["average_marks"] is None
+
+
+def test_registration_rejects_missing_password(client):
+    response = client.post("/api/auth/register", json={
+        "name": "No Password", "email": f"nopw.{uuid.uuid4().hex[:8]}@campus.edu",
+        "roll_number": f"NP{uuid.uuid4().hex[:8]}", "department": "Computing",
+        "semester": 1, "target_role": "frontend_dev"
+    })
+    assert response.status_code == 400

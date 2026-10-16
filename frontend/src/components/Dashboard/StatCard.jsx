@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function StatCard({ title, value, subtitle, icon: Icon, color = 'indigo', badge, trend }) {
+export default function StatCard({ title, value, subtitle, icon: Icon, color = 'indigo', badge, trend, progress }) {
   const colorMap = {
     indigo: {
       bg: 'bg-indigo-50/70',
@@ -73,6 +73,11 @@ export default function StatCard({ title, value, subtitle, icon: Icon, color = '
           {trend && <span className="font-semibold text-emerald-600">{trend}</span>}
           {subtitle}
         </p>
+      )}
+      {progress != null && (
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-label={`${title} progress`} aria-valuemin="0" aria-valuemax="100" aria-valuenow={progress}>
+          <div className="h-full rounded-full bg-current transition-[width] duration-500" style={{ width: `${progress}%`, color: 'var(--progress-color, #356AE6)' }} />
+        </div>
       )}
     </div>
   );

@@ -42,7 +42,8 @@ def audit_academic_performance(student: Dict[str, Any]) -> Dict[str, Any]:
     Computes averages, weighted GPA, strong & weak subjects, and distribution.
     """
     subjects_data = student.get("subjects", [])
-    attendance = float(student.get("attendance_percentage", 0.0))
+    attendance_value = student.get("attendance_percentage")
+    attendance = float(attendance_value) if attendance_value is not None else None
 
     if not subjects_data:
         return {
@@ -52,24 +53,24 @@ def audit_academic_performance(student: Dict[str, Any]) -> Dict[str, Any]:
             "semester": student.get("semester"),
             "total_subjects": 0,
             "total_credits": 0,
-            "average_marks": 0.0,
-            "weighted_gpa": 0.0,
-            "highest_mark": 0.0,
-            "lowest_mark": 0.0,
-            "marks_std_dev": 0.0,
-            "performance_category": "Needs Improvement",
-            "category_description": "No subject marks available to evaluate.",
-            "category_color": "rose",
+            "average_marks": None,
+            "weighted_gpa": None,
+            "highest_mark": None,
+            "lowest_mark": None,
+            "marks_std_dev": None,
+            "performance_category": "Awaiting academic records",
+            "category_description": "Add subject marks to calculate academic performance.",
+            "category_color": "blue",
             "strong_subjects_count": 0,
             "moderate_subjects_count": 0,
             "weak_subjects_count": 0,
             "strong_subjects": [],
             "moderate_subjects": [],
             "weak_subjects": [],
-            "attendance_analysis": analyze_attendance(attendance),
+            "attendance_analysis": analyze_attendance(attendance) if attendance is not None else None,
             "grade_distribution": {},
             "subjects_breakdown": [],
-            "summary_insights": ["No subject marks available to evaluate."]
+        "summary_insights": ["No subject marks available. Add records to calculate an academic audit."]
         }
 
     # Process subjects
@@ -129,7 +130,7 @@ def audit_academic_performance(student: Dict[str, Any]) -> Dict[str, Any]:
         category_color = "rose"
 
     # Attendance Analysis
-    attendance_analysis = analyze_attendance(attendance)
+    attendance_analysis = analyze_attendance(attendance) if attendance is not None else None
 
     # Grade distribution counts
     grade_distribution = {
@@ -154,7 +155,9 @@ def audit_academic_performance(student: Dict[str, Any]) -> Dict[str, Any]:
         top_sub = sorted(strong_subjects, key=lambda x: x["marks"], reverse=True)[0]
         insights.append(f"Top performing subject is '{top_sub['name']}' with {top_sub['marks']} marks.")
 
-    if attendance < 75.0:
+    if attendance is None:
+        insights.append("Attendance has not been provided.")
+    elif attendance < 75.0:
         insights.append("Critical attendance deficit: Below the university 75% examination eligibility limit.")
     elif attendance < 80.0:
         insights.append("Attendance is in the warning band (75-80%). Maintain regular presence.")

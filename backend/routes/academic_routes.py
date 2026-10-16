@@ -7,15 +7,18 @@ from flask import Blueprint, jsonify
 from database.db import get_students_collection
 from services.academic_service import audit_academic_performance
 from models.student_model import serialize_student
+from auth import authenticated
 
 academic_bp = Blueprint("academic", __name__, url_prefix="/api/academic")
 
 @academic_bp.route("/audit/<student_id>", methods=["GET"])
+@authenticated
 def get_academic_audit(student_id):
     """Executes automated academic audit on student record."""
     try:
         col = get_students_collection()
-        student = col.find_one({"$or": [{"id": student_id}, {"roll_number": student_id}]})
+        from flask import g
+        student = g.student
         if not student:
             return jsonify({"status": "error", "message": f"Student '{student_id}' not found."}), 404
 

@@ -48,7 +48,7 @@ def create_app():
             "version": "1.0.0",
             "description": "Automated Academic Audit and Personalized Skill-Gap Analysis Platform",
             "status": "online",
-            "db_mode": "MongoDB Live" if is_connected_to_mongo() else "Embedded Resilient Database",
+            "db_mode": "MongoDB persistent" if is_connected_to_mongo() else "In-memory demo fallback (data resets on restart)",
             "endpoints": [
                 "/api/students",
                 "/api/academic/audit/<student_id>",
@@ -65,6 +65,7 @@ def create_app():
         return jsonify({
             "status": "healthy",
             "mongo_connected": is_connected_to_mongo(),
+            "persistent_storage": is_connected_to_mongo(),
             "service": "AI Campus Companion Backend Engine"
         }), 200
 

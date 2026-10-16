@@ -100,14 +100,14 @@ export const api = {
   },
 
   // Academic Audit
-  async getAcademicAudit(studentId) {
-    return fetchJson(`/academic/audit/${studentId}`);
+  async getAcademicAudit(studentId, token) {
+    return fetchJson(`/academic/audit/${studentId}`, { headers: { Authorization: `Bearer ${token}` } });
   },
 
   // Skill Gap Analysis
-  async getSkillGap(studentId, roleId = null) {
+  async getSkillGap(studentId, roleId = null, token) {
     const query = roleId ? `?role=${encodeURIComponent(roleId)}` : '';
-    return fetchJson(`/skills/gap-analysis/${studentId}${query}`);
+    return fetchJson(`/skills/gap-analysis/${studentId}${query}`, { headers: { Authorization: `Bearer ${token}` } });
   },
 
   // Career Roles
@@ -127,14 +127,14 @@ export const api = {
   },
 
   // Personalized Recommendations
-  async getRecommendations(studentId, roleId = null) {
+  async getRecommendations(studentId, roleId = null, token) {
     const query = roleId ? `?role=${encodeURIComponent(roleId)}` : '';
-    return fetchJson(`/recommendations/${studentId}${query}`);
+    return fetchJson(`/recommendations/${studentId}${query}`, { headers: { Authorization: `Bearer ${token}` } });
   },
 
   // Consolidated Student Report
-  async getStudentReport(studentId, roleId = null) {
+  async getStudentReport(studentId, roleId = null, token) {
     const query = roleId ? `?role=${encodeURIComponent(roleId)}` : '';
-    return fetchJson(`/reports/student/${studentId}${query}`);
+    return fetchJson(`/reports/student/${studentId}${query}`, { headers: { Authorization: `Bearer ${token}` } });
   },
 };

@@ -1,8 +1,20 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Calendar, CheckCircle2, Circle } from 'lucide-react';
+import { useStudent } from '../../context/StudentContext';
 
 export default function LearningRoadmapCard({ thirtyDayPlan = [] }) {
-  const [completedSteps, setCompletedSteps] = useState({});
+  const { activeStudent, updateProfile } = useStudent();
+  const [completedSteps, setCompletedSteps] = useState(() => new Set(activeStudent?.roadmap_progress || []));
+  const [saving, setSaving] = useState(false);
+  useEffect(() => setCompletedSteps(new Set(activeStudent?.roadmap_progress || [])), [activeStudent?.roadmap_progress]);
+  const toggleStep = async (step) => {
+    const id = `${step.day}:${step.focus}`;
+    const next = new Set(completedSteps);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSaving(true);
+    try { await updateProfile({ roadmap_progress: [...next] }); setCompletedSteps(next); } catch { /* updateProfile exposes the API error in the app shell. */ }
+    finally { setSaving(false); }
+  };
 
   return (
     <section className="section-card space-y-4">
@@ -19,7 +31,7 @@ export default function LearningRoadmapCard({ thirtyDayPlan = [] }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
         {thirtyDayPlan.map((step, idx) => (
           <article
-            key={idx}
+          key={`${step.day}:${step.focus}`}
             className="roadmap-step p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between space-y-3 relative overflow-hidden"
           >
             <div className="flex items-center justify-between">
@@ -36,12 +48,13 @@ export default function LearningRoadmapCard({ thirtyDayPlan = [] }) {
 
             <button
               type="button"
-              aria-pressed={Boolean(completedSteps[idx])}
-              onClick={() => setCompletedSteps((state) => ({ ...state, [idx]: !state[idx] }))}
-              className={`roadmap-toggle flex items-center gap-1.5 text-[11px] font-semibold pt-2 border-t border-slate-200/60 transition-colors ${completedSteps[idx] ? 'text-emerald-700' : 'priority-high-pending text-rose-700 hover:text-rose-800'}`}
+              aria-pressed={completedSteps.has(`${step.day}:${step.focus}`)}
+              disabled={saving}
+              onClick={() => toggleStep(step)}
+              className={`roadmap-toggle flex items-center gap-1.5 text-[11px] font-semibold pt-2 border-t border-slate-200/60 transition-colors ${completedSteps.has(`${step.day}:${step.focus}`) ? 'text-emerald-700' : 'priority-high-pending text-rose-700 hover:text-rose-800'}`}
             >
-              {completedSteps[idx] ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
-              <span>{completedSteps[idx] ? 'Completed' : 'Pending action · Mark complete'}</span>
+              {completedSteps.has(`${step.day}:${step.focus}`) ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
+              <span>{completedSteps.has(`${step.day}:${step.focus}`) ? 'Completed' : 'Pending action · Mark complete'}</span>
             </button>
           </article>
         ))}

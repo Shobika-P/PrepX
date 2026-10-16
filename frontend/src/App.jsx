@@ -47,11 +47,11 @@ function AppContent() {
       <Navbar />
 
       <div className="app-shell flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto">
-        <div className="no-print">
+        <div className="app-sidebar-wrap no-print">
           <Sidebar />
         </div>
 
-        <main className="app-main flex-1 p-4 sm:p-6 lg:p-8 min-w-0 overflow-y-auto">
+        <main className="app-main flex-1 p-4 sm:p-6 lg:p-8 min-w-0">
           {error && (
             <div className="no-print mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-center justify-between shadow-sm">
               <span>{error}</span>
