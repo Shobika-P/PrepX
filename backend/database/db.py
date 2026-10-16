@@ -75,5 +75,8 @@ def get_students_collection():
 def get_careers_collection():
     return db_manager.db["careers"]
 
+def get_assessment_attempts_collection():
+    return db_manager.db["assessment_attempts"]
+
 def is_connected_to_mongo():
     return db_manager.is_mongo

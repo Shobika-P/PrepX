@@ -17,6 +17,7 @@ from routes.skill_routes import skill_bp
 from routes.career_routes import career_bp
 from routes.recommendation_routes import rec_bp
 from routes.report_routes import report_bp
+from routes.assessment_routes import assessment_bp
 
 logging.basicConfig(
     level=logging.INFO,
@@ -40,6 +41,7 @@ def create_app():
     app.register_blueprint(career_bp)
     app.register_blueprint(rec_bp)
     app.register_blueprint(report_bp)
+    app.register_blueprint(assessment_bp)
 
     @app.route("/", methods=["GET"])
     def root():

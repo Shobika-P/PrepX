@@ -7,12 +7,14 @@ import {
   Sparkles, 
   FileText,
   CheckCircle2,
+  ClipboardCheck,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Overview', icon: LayoutDashboard, badge: null },
   { id: 'academic', label: 'Academic audit', icon: GraduationCap, badge: null },
   { id: 'skillgap', label: 'Career readiness', icon: Compass, badge: null },
+  { id: 'assessment', label: 'Skill Assessment', icon: ClipboardCheck, badge: null },
   { id: 'recommendations', label: 'Study plan', icon: Sparkles, badge: null },
   { id: 'report', label: 'Progress report', icon: FileText, badge: null },
 ];

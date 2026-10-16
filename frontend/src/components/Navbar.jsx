@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, ChevronDown, LogOut, Moon, PencilLine, Printer, Sun } from 'lucide-react';
+import { BookOpen, LogOut, Moon, PencilLine, Printer, Sun } from 'lucide-react';
 import { useStudent } from '../context/StudentContext';
 
 export default function Navbar() {
@@ -11,7 +11,7 @@ export default function Navbar() {
         <span><strong>PrepX</strong><small>Academic success, in focus</small></span>
       </button>
       <div className="header-actions">
-        <label className="role-picker"><span>Career focus</span><select value={activeRole?.id || ''} onChange={(e) => selectRole(e.target.value)}>{careerRoles.map((role) => <option key={role.id} value={role.id}>{role.title}</option>)}</select><ChevronDown size={14} /></label>
+        <label className="role-picker"><span>Career focus</span><select value={activeRole?.id || ''} onChange={(e) => selectRole(e.target.value)}>{careerRoles.map((role) => <option key={role.id} value={role.id}>{role.title}</option>)}</select></label>
         <span className={`system-pill ${systemStatus.online && systemStatus.persistent ? 'online' : systemStatus.online ? 'volatile' : ''}`} title={systemStatus.dbMode}><i />{systemStatus.online ? systemStatus.persistent ? 'Connected' : 'Temporary storage' : 'Offline'}</span>
         <div className="account-chip"><span className="avatar">{activeStudent?.name?.charAt(0) || '?'}</span><span><strong>{activeStudent?.name || 'Student'}</strong><small>Student account</small></span></div>
         <button className="icon-button profile-action" onClick={() => setProfileModalOpen(true)} title="Edit profile" aria-label="Edit profile"><PencilLine size={17} /></button>

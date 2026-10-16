@@ -13,6 +13,7 @@ from services.academic_service import audit_academic_performance, analyze_attend
 from services.skill_gap_service import analyze_skill_gap, normalize_skill
 from services.recommendation_service import generate_personalized_recommendations
 from models.student_model import validate_student_data
+from services.assessment_service import QUESTION_BANK, proficiency, public_questions, score_submission
 
 def test_calculate_grade_point():
     assert calculate_grade_point(95)[0] == 10.0
@@ -113,6 +114,42 @@ def test_student_validation():
     assert cleaned["name"] == "Jane Doe"
     assert cleaned["semester"] == 4
     assert cleaned["attendance_percentage"] == 88.5
+
+def test_assessment_questions_hide_answer_keys_and_scoring():
+    questions = public_questions("javascript", 1)
+    assert len(questions) == 10
+    assert all("correct" not in q and "answer" not in q for q in questions)
+    answers = [{"question_id": q["id"], "selected_option": 1} for q in questions]
+    result = score_submission("javascript", 1, answers)
+    assert result["total_questions"] == 10
+    assert result["correct_answers"] == 2
+    assert result["score_percentage"] == 20
+    assert result["proficiency"] == "Beginner"
+    assert len(result["question_review"]) == 10
+
+def test_assessment_proficiency_boundaries_and_validation():
+    assert [proficiency(score) for score in (0, 39, 40, 59, 60, 79, 80, 100)] == [
+        "Beginner", "Beginner", "Developing", "Developing", "Proficient", "Proficient", "Advanced", "Advanced"
+    ]
+    questions = public_questions("git", 1)
+    assert score_submission("git", 1, [{"question_id": q["id"], "selected_option": answer[2]} for q, answer in zip(questions, QUESTION_BANK["git"]["questions"])])["score_percentage"] == 100
+    with pytest.raises(ValueError): score_submission("git", 1, [])
+    with pytest.raises(ValueError): score_submission("git", 1, [{"question_id": questions[0]["id"], "selected_option": 0}] * 10)
+    malformed = [{"question_id": q["id"], "selected_option": 0} for q in questions]
+    malformed[0]["selected_option"] = 4
+    with pytest.raises(ValueError): score_submission("git", 1, malformed)
+
+def test_assessment_exact_score_boundaries():
+    questions = public_questions("git", 2)
+    for correct_count in (0, 4, 6, 8, 10):
+        answers = []
+        for i, question in enumerate(QUESTION_BANK["git"]["questions"]):
+            correct_option = question[2]
+            option = correct_option if i < correct_count else (correct_option + 1) % 4
+            answers.append({"question_id": f"git-L2-{i+1}", "selected_option": option})
+        result = score_submission("git", 2, answers)
+        assert result["score_percentage"] == correct_count * 10
+        assert result["proficiency"] == proficiency(correct_count * 10)
 
 if __name__ == "__main__":
     pytest.main(["-v", __file__])

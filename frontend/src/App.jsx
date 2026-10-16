@@ -10,6 +10,7 @@ import SkillGapView from './components/SkillGap/SkillGapView';
 import RecommendationsView from './components/Recommendations/RecommendationsView';
 import StudentListView from './components/StudentManagement/StudentListView';
 import StudentReportView from './components/Reports/StudentReportView';
+import SkillAssessmentView from './components/Assessment/SkillAssessmentView';
 import { BookOpen, Bookmark, PencilLine, Ruler } from 'lucide-react';
 
 function AppContent() {
@@ -25,6 +26,8 @@ function AppContent() {
         return <AcademicAuditView />;
       case 'skillgap':
         return <SkillGapView />;
+      case 'assessment':
+        return <SkillAssessmentView />;
       case 'recommendations':
         return <RecommendationsView />;
       case 'students':

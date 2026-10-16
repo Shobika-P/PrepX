@@ -137,4 +137,17 @@ export const api = {
     const query = roleId ? `?role=${encodeURIComponent(roleId)}` : '';
     return fetchJson(`/reports/student/${studentId}${query}`, { headers: { Authorization: `Bearer ${token}` } });
   },
+
+  async getAssessmentSkills(token) {
+    return fetchJson('/assessments/skills', { headers: { Authorization: `Bearer ${token}` } });
+  },
+  async getAssessmentQuestions(skillId, level, token) {
+    return fetchJson(`/assessments/${encodeURIComponent(skillId)}/questions?level=${level}`, { headers: { Authorization: `Bearer ${token}` } });
+  },
+  async submitAssessment(skillId, level, answers, token) {
+    return fetchJson('/assessments/submit', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: JSON.stringify({ skill_id: skillId, level, answers }) });
+  },
+  async getAssessmentHistory(token) {
+    return fetchJson('/assessments/history', { headers: { Authorization: `Bearer ${token}` } });
+  },
 };

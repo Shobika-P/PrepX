@@ -26,6 +26,7 @@
 .header-actions { display: flex; align-items: center; gap: 12px; }
 .role-picker { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 9px; color: #64748b; font-size: 11px; }
 .role-picker select { max-width: 180px; border: 0; outline: 0; background: transparent; color: #253b50; font-size: 12px; font-weight: 600; }
+.role-picker select option, select option { color: #25384a; background-color: #fff; }
 .system-pill { display: flex; align-items: center; gap: 7px; color: #7b8794; font-size: 11px; white-space: nowrap; }
 .system-pill i { width: 7px; height: 7px; border-radius: 50%; background: #a0aec0; }
 .system-pill.online i { background: #43856b; }
@@ -93,6 +94,7 @@ html.dark .border-slate-100, html.dark .border-slate-200, html.dark .border-slat
 html.dark .text-slate-900, html.dark .text-slate-800, html.dark .text-slate-700 { color: #e0e8ee !important; }
 html.dark .text-slate-600, html.dark .text-slate-500, html.dark .text-slate-400 { color: #a9b6c1 !important; }
 html.dark input, html.dark select, html.dark textarea { background-color: #17232e; color: #e0e8ee; border-color: #40515f; }
+html.dark select option { color: #e0e8ee; background-color: #17232e; }
 html.dark input::placeholder, html.dark textarea::placeholder { color: #96a5b2; }
 html.dark .profile-summary { background: #263a4c; }
 html.dark .dashboard-hero { background: #243b50; }
