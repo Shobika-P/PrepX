@@ -61,13 +61,12 @@ MongoDB Atlas
 - Optional machine-learning-based recommendations.
 - Enhanced student progress tracking.
 
-## Project Team
+## Presented by
 
 **SHOBIKA P**  
-**SELVASOBIKA M**
 
-Department of Computer Science and Engineering  
-Bannari Amman Institute of Technology
+
+
 
 ---
 
